@@ -353,22 +353,7 @@ c2(no)->op2->e
 
 - 效果显示
 
-```flow
-st=>start: Start :>https://amwiki.xf09.net[blank]
-e=>end: End :>https://amwiki.xf09.net[blank]
-op1=>operation: My Operation
-op2=>operation: Stuff
-sub1=>subroutine: My Subroutine
-cond=>condition: Yes or No? :>https://amwiki.xf09.net[blank]
-c2=>condition: Good idea
-io=>inputoutput: catch something...
-
-st->op1(right)->cond
-cond(yes, right)->c2
-cond(no)->sub1(left)->op1
-c2(yes)->io->e
-c2(no)->op2->e
-```
+![flowchat](https://gitee.com/msntec/work-notes/tree/master/Markdown/pic/flowchat.png?raw=true)
 
 ### 流程图语法介绍
 

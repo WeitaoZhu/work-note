@@ -227,21 +227,21 @@ print s
 //注意，默认图片格式是原始尺寸，如果想自定义图像大小，要用img标签：
 
 Inline-style: 
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
+![alt text](https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png "Logo Title Text 1")
 
 Reference-style: 
 ![alt text][logo]
 
-[logo]: https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 2"
+[logo]: https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png "Logo Title Text 2"
 ```
 
 Inline-style: 
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png?=300x300 "Logo Title Text 1")
+![alt text](https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png "Logo Title Text 1")
 
 Reference-style: 
 ![alt text][logo]
 
-[logo]: https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 2"
+[logo]: https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png "Logo Title Text 2"
 
 ### 设置图片大小
 
@@ -257,23 +257,25 @@ Reference-style:
 
 - 效果显示
 
-![loading.png](http://upload-images.jianshu.io/upload_images/1503319-c696a9cd1495d68f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![loading.png](http://upload-images.jianshu.io/upload_images/1503319-c696a9cd1495d68f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)  
 
-![loading.png](http://upload-images.jianshu.io/upload_images/1503319-c696a9cd1495d68f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/200)
+  ![loading.png](http://upload-images.jianshu.io/upload_images/1503319-c696a9cd1495d68f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/200)
 
-#### 使用HTML \<img>标签并设置width和height
+#### 使用HTML \<img>标签并设置width和height和比例放缩
 
 - 代码：
 
 ```markdown
-<img src="http://upload-images.jianshu.io/upload_images/1503319-c696a9cd1495d68f.png" alt="图片替换文本" width="500" height="313" align="bottom" />
+<img src="https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png" alt="图片替换文本" width="500" height="313" align="bottom" />
+
+<img src="https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png" alt="图片替换文本" width=60% />
 ```
 
 - 效果显示
 
-<img src="http://upload-images.jianshu.io/upload_images/1503319-c696a9cd1495d68f.png" alt="图片替换文本" width="500" height="313" align="bottom" />
+<img src="https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png" alt="图片替换文本" width="500" height="313" align="bottom" />
 
-
+<img src="https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png" alt="图片替换文本" width=25% />
 
 ## 多选框
 

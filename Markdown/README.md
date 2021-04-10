@@ -273,7 +273,7 @@ Reference-style:
 
 - 效果显示
 
-<img src="https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png" alt="图片替换文本" width="500" height="313" align="bottom" />
+<img src="https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png" alt="图片替换文本" width="500" height="313" align="bottom" />  
 
 <img src="https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/markdown_flag.png" alt="图片替换文本" width=25% />
 

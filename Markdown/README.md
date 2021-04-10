@@ -353,7 +353,7 @@ c2(no)->op2->e
 
 - 效果显示
 
-![flowchat](https://gitee.com/msntec/work-notes/tree/master/Markdown/pic/flowchat.png?raw=true)
+![flowchat](https://gitee.com/msntec/work-notes/raw/master/Markdown/pic/flowchat.png)  
 
 ### 流程图语法介绍
 

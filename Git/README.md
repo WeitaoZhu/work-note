@@ -2,9 +2,47 @@
 
 > 这是一篇在[原文](http://marklodato.github.io/visual-git-guide/index-zh-cn.html)基础上演绎的文章。原作者 [Mark Lodato](lodatom@gmail.com)，译者 [wych](ellrywych@gmail.com)。原文采用[创用 CC 姓名标示-非商业性-相同方式分享 3.0 美国授权条款](https://creativecommons.org/licenses/by-nc-sa/3.0/us/)授权。
 
-此页图解 git 中的最常用命令。如果你稍微理解 git 的工作原理，这篇文章能够让你理解的更透彻。
+一份来自[github/Kuri-su](https://github.com/Kuri-su/GitMindMap-command)的 git 思维导图帮助大家命令查询。
 
 ![enter image description here](https://gitee.com/msntec/work-notes/raw/master/Git/pic/git_v2.16.png)
+
+- 包含以下命令查询：
+
+```git
+git init
+git add
+git branch
+git checkout
+git clean
+git clone
+git config
+git commit
+git diff
+git fetch
+git gc
+git grep
+git log
+git merge
+git mv
+git pull
+git push
+git rebase
+git reflog
+git remote
+git reset
+git rm
+git submodlue
+git show
+git stash
+git status
+git tag
+```
+
+
+
+此页 git 图解中的最常用命令。如果你稍微理解 git 的工作原理，这篇文章能够让你理解的更透彻。
+
+
 
 ## 基本用法
 
@@ -142,3 +180,109 @@
 ![enter image description here](https://gitee.com/msntec/work-notes/raw/master/Git/pic/rebase-onto.svg)
 
 同样有 `git rebase --interactive` 让你更方便的完成一些复杂操作，比如丢弃、重排、修改、合并提交。
+
+
+
+# 特殊场景举例
+
+## git 仓库搬移
+
+假如我想把[OpenOCD - Open On-Chip Debugger](https://sourceforge.net/p/openocd/code/ci/v0.11.0/tree/) `OpenOCD 0.11.0 released` 拉到`gitee`仓库另作修改，并且保留原先所有提交记录。
+
+```bash
+$  git clone https://git.code.sf.net/p/openocd/code  openocd
+Cloning into 'openocd'...
+remote: Enumerating objects: 67709, done.
+remote: Counting objects: 100% (67709/67709), done.
+remote: Compressing objects: 100% (31407/31407), done.
+remote: Total 67709 (delta 55694), reused 43998 (delta 36123)
+Receiving objects: 100% (67709/67709), 15.26 MiB | 1.57 MiB/s, done.
+Resolving deltas: 100% (55694/55694), done.
+Updating files: 100% (1794/1794), done.
+
+$ cd openocd
+$ git branch openocd_0.11.0_released f342aa
+
+$ git branch
+* master
+  openocd_0.11.0_released
+
+$ git checkout openocd_0.11.0_released
+Switched to branch 'openocd_0.11.0_released'
+
+$ git log
+commit f342aac0845a69d591ad39a025d74e9c765f6420 (HEAD -> openocd_0.11.0_released, tag: v0.11.0)
+Author: Paul Fertser <fercerpav@gmail.com>
+Date:   Sun Mar 7 13:36:49 2021 +0300
+
+    The openocd-0.11.0 release
+
+    Signed-off-by: Paul Fertser <fercerpav@gmail.com>
+
+commit 5f3bc3b279c648f5c751fcd4724206c6ce3e38c6
+Author: Antonio Borneo <borneo.antonio@gmail.com>
+Date:   Wed Mar 3 21:57:33 2021 +0100
+
+    tcl/target/eos_s3: fix variable's expansion typo
+
+    TCL expands the variables only if preceded by a dollar sign.
+
+    Add the missing dollar before the variable's name '_CPUTAPID'.
+
+    Change-Id: Icc5d0dddf24f75d12ee63fee69e1b265e842ca43
+    Signed-off-by: Antonio Borneo <borneo.antonio@gmail.com>
+    Reported-by: Wes Cilldhaire <wes@sol1.com.au>
+    Fixes: c3166b43e415 ("tcl/target: Add QuickLogic EOS S3 MCU configuration")
+:...skipping...
+commit f342aac0845a69d591ad39a025d74e9c765f6420 (HEAD -> openocd_0.11.0_released, tag: v0.11.0)
+Author: Paul Fertser <fercerpav@gmail.com>
+Date:   Sun Mar 7 13:36:49 2021 +0300
+
+    The openocd-0.11.0 release
+
+    Signed-off-by: Paul Fertser <fercerpav@gmail.com>
+
+$ git remote -v
+origin  https://git.code.sf.net/p/openocd/code (fetch)
+origin  https://git.code.sf.net/p/openocd/code (push)
+
+$ git remote rm origin
+$ git remote add origin https://gitee.com/msntec/openocd_0.11.0_released.git
+
+$ git push origin master
+Username for 'https://gitee.com':
+Password for 'https://weitao.zhu@aliyun.com@gitee.com':
+Enumerating objects: 67678, done.
+Counting objects: 100% (67678/67678), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (11827/11827), done.
+Writing objects: 100% (67678/67678), 15.28 MiB | 4.74 MiB/s, done.
+Total 67678 (delta 55700), reused 67647 (delta 55672), pack-reused 0
+remote: Resolving deltas: 100% (55700/55700), done.
+remote: Powered by GITEE.COM [GNK-5.0]
+To https://gitee.com/msntec/openocd_0.11.0_released.git
+ * [new branch]          master -> master
+
+$ git branch
+  master
+* openocd_0.11.0_released
+
+$ git push origin openocd_0.11.0_released
+Username for 'https://gitee.com':
+Password for 'https://weitao.zhu@aliyun.com@gitee.com':
+Total 0 (delta 0), reused 0 (delta 0), pack-reused 0
+remote: Powered by GITEE.COM [GNK-5.0]
+remote: Create a pull request for 'openocd_0.11.0_released' on Gitee by visiting:
+remote:     https://gitee.com/msntec/openocd_0.11.0_released/pull/new/msntec:openocd_0.11.0_released...msntec:master
+To https://gitee.com/msntec/openocd_0.11.0_released.git
+ * [new branch]          openocd_0.11.0_released -> openocd_0.11.0_released
+```
+
+查看gitee仓库确认如下：
+
+![enter image description here](https://gitee.com/msntec/work-notes/raw/master/Git/pic/openocd_0.11.0_released.png)
+
+
+
+
+

@@ -282,7 +282,194 @@ To https://gitee.com/msntec/openocd_0.11.0_released.git
 
 ![enter image description here](https://gitee.com/msntec/work-notes/raw/master/Git/pic/openocd_0.11.0_released.png)
 
+## git 仓库注释修改
+
+假如在`git push`上传修改，`commit message`描写错误或者输出内容改怎么办？
+
+```bash
+$ git log -3
+commit f762e9ca98895f501cffc163a0bd9fd2153a436c (HEAD -> openocd_0.11.0_released, origin/openocd_0.11.0_released)
+Author: Weitao Zhu <weitao.zhu@aliyun.com>
+Date:   Mon Apr 12 19:18:43 2021 +0800
+
+        tcl/interface/ftdi: Add ft2232hl debugger config
+        tcl/target: add nxp_s32k3xx configuration file
+        Tested-by: Weitao Zhu
+        add cfg file for FT2232HL and NXP S32K3XX chip
+
+commit f342aac0845a69d591ad39a025d74e9c765f6420
+Author: Paul Fertser <fercerpav@gmail.com>
+Date:   Sun Mar 7 13:36:49 2021 +0300
+
+    The openocd-0.11.0 release
+
+    Signed-off-by: Paul Fertser <fercerpav@gmail.com>
+
+commit 5f3bc3b279c648f5c751fcd4724206c6ce3e38c6
+Author: Antonio Borneo <borneo.antonio@gmail.com>
+Date:   Wed Mar 3 21:57:33 2021 +0100
+
+    tcl/target/eos_s3: fix variable's expansion typo
+
+    TCL expands the variables only if preceded by a dollar sign.
+
+    Add the missing dollar before the variable's name '_CPUTAPID'.
+
+    Change-Id: Icc5d0dddf24f75d12ee63fee69e1b265e842ca43
+    Signed-off-by: Antonio Borneo <borneo.antonio@gmail.com>
+    Reported-by: Wes Cilldhaire <wes@sol1.com.au>
+    Fixes: c3166b43e415 ("tcl/target: Add QuickLogic EOS S3 MCU configuration")
+    Reviewed-on: http://openocd.zylin.com/6079
+    Tested-by: jenkins
+    Reviewed-by: TM <tommy_murphy@hotmail.com>
+```
+
+发现`commit f762e9ca98895f501cffc163a0bd9fd2153a436c` 中 `NXP S32K3XX` 写错，我想改成 `NXP S32K344` 。
+
+使用 `git rebase -i <简短commitID>` 需要使用修改`commit id`前一个id。
+
+```bash
+git rebase -i f342aac0845a69d591ad39a025d74e9c765f6420
+
+进入VIM 操作模式
+pick f762e9ca9 tcl/interface/ftdi: Add ft2232hl debugger config     tcl/target: add nxp_s32k3xx configuration file     Tested-by: Weitao Zhu     add cfg file for FT2232HL and NXP S32K3XX chip
+
+# Rebase f342aac08..f762e9ca9 onto f342aac08 (1 command)
+```
+
+将 `pick f762e9ca9` 改成 `reword f762e9ca9`
+
+```bash
+reword f762e9ca9 tcl/interface/ftdi: Add ft2232hl debugger config     tcl/target: add nxp_s32k3xx configuration file     Tested-by: Weitao Zhu     add cfg file for FT2232HL and NXP S32K3XX chip
+
+# Rebase f342aac08..f762e9ca9 onto f342aac08 (1 command)
+```
+
+随后进入到对应`f342aac08 commit message` 修改
+
+```bash
+    tcl/interface/ftdi: Add ft2232hl debugger config
+    tcl/target: add nxp_s32k3xx configuration file
+    Tested-by: Weitao Zhu
+    add cfg file for FT2232HL and NXP S32K3XX chip
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Mon Apr 12 19:18:43 2021 +0800
+```
+
+然后把`NXP S32K3XX chip` 改成 `NXP S32K344 chip`
+
+```bash
+    tcl/interface/ftdi: Add ft2232hl debugger config
+    tcl/target: add nxp_s32k3xx configuration file
+    Tested-by: Weitao Zhu
+    add cfg file for FT2232HL and NXP S32K3X4 chip
+```
+
+然后按ESC键 再按 shift + : 然后输入wq（w是保存，q是退出） 按回车键
+
+```bash
+$ git rebase -i f342aac0845a69d591ad39a025d74e9c765f6420
+[detached HEAD 99ee0bd4a]     tcl/interface/ftdi: Add ft2232hl debugger config     tcl/target: add nxp_s32k3xx configuration file     Tested-by: Weitao Zhu     add cfg file for FT2232HL and NXP S32K3XX chip
+ Date: Mon Apr 12 19:18:43 2021 +0800
+ 2 files changed, 243 insertions(+)
+ create mode 100755 tcl/interface/ftdi/ftdi_ft2232d.cfg
+ create mode 100755 tcl/target/nxp_s32k3x4.cfg
+Successfully rebased and updated refs/heads/openocd_0.11.0_released.
+```
+
+最后强制`push`上去`git push --force`
+
+```bash
+$ git push --force
+Username for 'https://gitee.com':
+Password for 'https://weitao.zhu@aliyun.com@gitee.com':
+Enumerating objects: 13, done.
+Counting objects: 100% (13/13), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 4.63 KiB | 947.00 KiB/s, done.
+Total 8 (delta 5), reused 0 (delta 0), pack-reused 0
+remote: Powered by GITEE.COM [GNK-5.0]
+To https://gitee.com/msntec/openocd_0.11.0_released.git
+ + 99ee0bd4a...52da517de openocd_0.11.0_released -> openocd_0.11.0_released (forced update)
+```
+
+查看`git log` 是否修改成功
+
+```bash
+$ git log
+commit 52da517de35a0ef2ba8f2e5e5c0351612299ddcd (HEAD -> openocd_0.11.0_released, origin/openocd_0.11.0_released)
+Author: Weitao Zhu <weitao.zhu@aliyun.com>
+Date:   Mon Apr 12 19:18:43 2021 +0800
+
+        tcl/interface/ftdi: Add ft2232hl debugger config
+        tcl/target: add nxp_s32k3xx configuration file
+        Tested-by: Weitao Zhu
+        add cfg file for FT2232HL and NXP S32K344 chip
+
+commit f342aac0845a69d591ad39a025d74e9c765f6420
+Author: Paul Fertser <fercerpav@gmail.com>
+Date:   Sun Mar 7 13:36:49 2021 +0300
+
+    The openocd-0.11.0 release
+
+    Signed-off-by: Paul Fertser <fercerpav@gmail.com>
+```
 
 
 
+下面两条快捷命令操作类似：
+
+- 适合修改最后一次commit信息
+
+```bash
+git commit --amend
+```
+
+进入VIM编辑模式
+
+然后按ESC键 再按 shift + : 然后输入wq（w是保存，q是退出） 按回车键
+
+最后强制`push`上去`git push --force`
+
+
+
+- 修改的commit是倒数第三条
+
+```bash
+git rebase -i HEAD~3
+
+进入到VIM编辑模式
+
+pick 5f3bc3b27 tcl/target/eos_s3: fix variable's expansion typo
+pick f342aac08 The openocd-0.11.0 release
+pick 52da517de tcl/interface/ftdi: Add ft2232hl debugger config     tcl/target: add nxp_s32k3xx configuration file     Tested-by: Weitao Zhu     add cfg file for FT2232HL and NXP S32K344 chip
+
+# Rebase 23d883139..52da517de onto 23d883139 (3 commands)
+```
+
+直接将你想要修改的`commit id` 前的 `pick` 改成 `reword`
+
+```bash
+pick 5f3bc3b27 tcl/target/eos_s3: fix variable's expansion typo
+pick f342aac08 The openocd-0.11.0 release
+reword 52da517de tcl/interface/ftdi: Add ft2232hl debugger config     tcl/target: add nxp_s32k3xx configuration file     Tested-by: Weitao Zhu     add cfg file for FT2232HL and NXP S32K344 chip
+
+# Rebase 23d883139..52da517de onto 23d883139 (3 commands)
+```
+
+然后按ESC键 再按 shift + : 然后输入wq（w是保存，q是退出） 按回车键
+
+进入到VIM编辑模式
+
+修改的`commit id = 52da517de` message
+
+进入VIM编辑模式
+
+然后按ESC键 再按 shift + : 然后输入wq（w是保存，q是退出） 按回车键
+
+最后强制`push`上去`git push --force`
 

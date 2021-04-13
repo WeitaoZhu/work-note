@@ -284,7 +284,15 @@ To https://gitee.com/msntec/openocd_0.11.0_released.git
 
 ## git 仓库注释修改
 
-假如在`git push`上传修改，`commit message`描写错误或者输出内容改怎么办？
+在`progit`中重写历史有提到一个信息
+
+<table><tr><td bgcolor=#FFEBCD><font color="black" size="2"><i>在满意之前不要推送你的工作。Git 的基本原则之一是，由于克隆中有很多工作是本地的，因此你可以在本地随便重写历史记录。 然而一旦推送了你的工作，那就完全是另一回事了，除非你有充分的理由进行更改，否则应该将推送的工作视为最终结果。<i></font><br /> </td></tr></table>
+
+意思是在`git push` 之前必须百分之百的确认你推送的工作是正确的。
+
+以下的例子在没有`git push` 之前，对`commit message`进行的修改都可以直接用`git push`推送。
+
+但是如果你已经`git push`上传修改，对`commit message`进行的修改都必须用`git push --force` or ``git push -f` 才能推送成功。一般不建议使用`git push --force`暴力推送。
 
 ```bash
 $ git log -3

@@ -14,7 +14,7 @@
 
 
 
-![Wave format](http://soundfile.sapp.org/doc/WaveFormat/wav-sound-format.gif "Logo Title Text 1")
+![Wave format](https://gitee.com/msntec/work-notes/raw/master/Audio/wav/pic/wav-sound-format.gif "Logo Title Text 1")
 
 ```html
 Offset  Size  Name             Description

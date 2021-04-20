@@ -304,3 +304,12 @@ $ hexdump -C -n256 sine.wav
 
 （13）“64 61 74 61”，这个是Ascii字符“data”，标示头结束，开始数据区域。
 （14）“00 10 00 00”十六进制数是“0x00001000”,对应十进制4096，是数据区的开头，以后数据总数，看一下前面正好可以看到，文件大小是4154，从（2）到（13）包括（13）正好是4154-4096=50字节。
+
+
+
+# 参考文档
+
+[1] [WAVE PCM soundfile format](http://soundfile.sapp.org/doc/WaveFormat/)
+
+[2] [wav文件格式分析与详解](https://www.cnblogs.com/ranson7zop/p/7657874.html)
+

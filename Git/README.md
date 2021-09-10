@@ -187,100 +187,155 @@ git tag
 
 ## git 仓库搬移
 
-假如我想把[OpenOCD - Open On-Chip Debugger](https://sourceforge.net/p/openocd/code/ci/v0.11.0/tree/) `OpenOCD 0.11.0 released` 拉到`gitee`仓库另作修改，并且保留原先所有提交记录。
+假如我想把[OpenOCD - Open On-Chip Debugger](https://sourceforge.net/p/openocd/code/ci/v0.11.0/tree/) `OpenOCD master` 拉到`gitlab`仓库另作修改，并且保留原先所有提交记录。
 
 ```bash
-$  git clone https://git.code.sf.net/p/openocd/code  openocd
-Cloning into 'openocd'...
-remote: Enumerating objects: 67709, done.
-remote: Counting objects: 100% (67709/67709), done.
-remote: Compressing objects: 100% (31407/31407), done.
-remote: Total 67709 (delta 55694), reused 43998 (delta 36123)
-Receiving objects: 100% (67709/67709), 15.26 MiB | 1.57 MiB/s, done.
-Resolving deltas: 100% (55694/55694), done.
-Updating files: 100% (1794/1794), done.
+$ git clone https://git.code.sf.net/p/openocd/code openocd-code
+Cloning into 'openocd-code'...
+remote: Enumerating objects: 70834, done.
+remote: Counting objects: 100% (70834/70834), done.
+remote: Compressing objects: 100% (12054/12054), done.
+remote: Total 70834 (delta 59144), reused 70044 (delta 58585)
+Receiving objects: 100% (70834/70834), 14.25 MiB | 424.00 KiB/s, done.
+Resolving deltas: 100% (59144/59144), done.
 
-$ cd openocd
-$ git branch openocd_0.11.0_released f342aa
 
-$ git branch
-* master
-  openocd_0.11.0_released
-
-$ git checkout openocd_0.11.0_released
-Switched to branch 'openocd_0.11.0_released'
-
-$ git log
-commit f342aac0845a69d591ad39a025d74e9c765f6420 (HEAD -> openocd_0.11.0_released, tag: v0.11.0)
-Author: Paul Fertser <fercerpav@gmail.com>
-Date:   Sun Mar 7 13:36:49 2021 +0300
-
-    The openocd-0.11.0 release
-
-    Signed-off-by: Paul Fertser <fercerpav@gmail.com>
-
-commit 5f3bc3b279c648f5c751fcd4724206c6ce3e38c6
-Author: Antonio Borneo <borneo.antonio@gmail.com>
-Date:   Wed Mar 3 21:57:33 2021 +0100
-
-    tcl/target/eos_s3: fix variable's expansion typo
-
-    TCL expands the variables only if preceded by a dollar sign.
-
-    Add the missing dollar before the variable's name '_CPUTAPID'.
-
-    Change-Id: Icc5d0dddf24f75d12ee63fee69e1b265e842ca43
-    Signed-off-by: Antonio Borneo <borneo.antonio@gmail.com>
-    Reported-by: Wes Cilldhaire <wes@sol1.com.au>
-    Fixes: c3166b43e415 ("tcl/target: Add QuickLogic EOS S3 MCU configuration")
-:...skipping...
-commit f342aac0845a69d591ad39a025d74e9c765f6420 (HEAD -> openocd_0.11.0_released, tag: v0.11.0)
-Author: Paul Fertser <fercerpav@gmail.com>
-Date:   Sun Mar 7 13:36:49 2021 +0300
-
-    The openocd-0.11.0 release
-
-    Signed-off-by: Paul Fertser <fercerpav@gmail.com>
-
+$ cd openocd-code/
 $ git remote -v
 origin  https://git.code.sf.net/p/openocd/code (fetch)
 origin  https://git.code.sf.net/p/openocd/code (push)
 
-$ git remote rm origin
-$ git remote add origin https://gitee.com/msntec/openocd_0.11.0_released.git
+$ git remote rm origin 
 
-$ git push origin master
-Username for 'https://gitee.com':
-Password for 'https://weitao.zhu@aliyun.com@gitee.com':
-Enumerating objects: 67678, done.
-Counting objects: 100% (67678/67678), done.
-Delta compression using up to 8 threads
-Compressing objects: 100% (11827/11827), done.
-Writing objects: 100% (67678/67678), 15.28 MiB | 4.74 MiB/s, done.
-Total 67678 (delta 55700), reused 67647 (delta 55672), pack-reused 0
-remote: Resolving deltas: 100% (55700/55700), done.
-remote: Powered by GITEE.COM [GNK-5.0]
-To https://gitee.com/msntec/openocd_0.11.0_released.git
+$ git remote add origin http://192.168.168.129:8081/bsp_bios/openocd-code.git
+
+$ git push -u origin --all
+Enumerating objects: 70708, done.
+Counting objects: 100% (70708/70708), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (11470/11470), done.
+Writing objects: 100% (70708/70708), 14.24 MiB | 17.53 MiB/s, done.
+Total 70708 (delta 59063), reused 70684 (delta 59043), pack-reused 0
+remote: Resolving deltas: 100% (59063/59063), done.
+To http://192.168.168.129:8081/bsp_bios/openocd-code.git
  * [new branch]          master -> master
+Branch 'master' set up to track remote branch 'master' from 'origin'.
 
-$ git branch
-  master
-* openocd_0.11.0_released
+$ git push -u origin --tags
+Enumerating objects: 218, done.
+Counting objects: 100% (215/215), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (96/96), done.
+Writing objects: 100% (151/151), 17.70 KiB | 4.42 MiB/s, done.
+Total 151 (delta 102), reused 103 (delta 55), pack-reused 0
+remote: Resolving deltas: 100% (102/102), completed with 36 local objects.
+To http://192.168.168.129:8081/bsp_bios/openocd-code.git
+ * [new tag]             v0.1.0 -> v0.1.0
+ * [new tag]             v0.10.0 -> v0.10.0
+ * [new tag]             v0.10.0-rc1 -> v0.10.0-rc1
+ * [new tag]             v0.10.0-rc2 -> v0.10.0-rc2
+ * [new tag]             v0.11.0 -> v0.11.0
+ * [new tag]             v0.11.0-rc1 -> v0.11.0-rc1
+ * [new tag]             v0.11.0-rc2 -> v0.11.0-rc2
+ * [new tag]             v0.2.0 -> v0.2.0
+ * [new tag]             v0.3.0 -> v0.3.0
+ * [new tag]             v0.3.0-rc0 -> v0.3.0-rc0
+ * [new tag]             v0.3.1 -> v0.3.1
+ * [new tag]             v0.4.0 -> v0.4.0
+ * [new tag]             v0.4.0-rc1 -> v0.4.0-rc1
+ * [new tag]             v0.4.0-rc2 -> v0.4.0-rc2
+ * [new tag]             v0.5.0 -> v0.5.0
+ * [new tag]             v0.5.0-rc1 -> v0.5.0-rc1
+ * [new tag]             v0.5.0-rc2 -> v0.5.0-rc2
+ * [new tag]             v0.6.0 -> v0.6.0
+ * [new tag]             v0.6.0-rc1 -> v0.6.0-rc1
+ * [new tag]             v0.6.0-rc2 -> v0.6.0-rc2
+ * [new tag]             v0.6.1 -> v0.6.1
+ * [new tag]             v0.7.0 -> v0.7.0
+ * [new tag]             v0.7.0-rc1 -> v0.7.0-rc1
+ * [new tag]             v0.7.0-rc2 -> v0.7.0-rc2
+ * [new tag]             v0.8.0 -> v0.8.0
+ * [new tag]             v0.8.0-rc1 -> v0.8.0-rc1
+ * [new tag]             v0.8.0-rc2 -> v0.8.0-rc2
+ * [new tag]             v0.9.0 -> v0.9.0
+ * [new tag]             v0.9.0-rc1 -> v0.9.0-rc1
 
-$ git push origin openocd_0.11.0_released
-Username for 'https://gitee.com':
-Password for 'https://weitao.zhu@aliyun.com@gitee.com':
-Total 0 (delta 0), reused 0 (delta 0), pack-reused 0
-remote: Powered by GITEE.COM [GNK-5.0]
-remote: Create a pull request for 'openocd_0.11.0_released' on Gitee by visiting:
-remote:     https://gitee.com/msntec/openocd_0.11.0_released/pull/new/msntec:openocd_0.11.0_released...msntec:master
-To https://gitee.com/msntec/openocd_0.11.0_released.git
- * [new branch]          openocd_0.11.0_released -> openocd_0.11.0_released
 ```
 
-查看gitee仓库确认如下：
+## git 本地仓库使用多个远程仓库
+就上面搬迁的gitlab仓库，我还想在gitee同样上传作为备份
 
-![enter image description here](https://gitee.com/msntec/work-notes/raw/master/Git/pic/openocd_0.11.0_released.png)
+```bash
+$ git remote -v
+origin  http://192.168.168.129:8081/bsp_bios/openocd-code.git (fetch)
+origin  http://192.168.168.129:8081/bsp_bios/openocd-code.git (push)
+
+$ git remote rename origin gitlab
+
+$ git remote add gitee https://gitee.com/msntec/openocd-code.git
+
+$ git remote -v
+gitee   https://gitee.com/msntec/openocd-code.git (fetch)
+gitee   https://gitee.com/msntec/openocd-code.git (push)
+gitlab  http://192.168.168.129:8081/bsp_bios/openocd-code.git (fetch)
+gitlab  http://192.168.168.129:8081/bsp_bios/openocd-code.git (push)
+
+$ git push -fu gitee  --all
+Enumerating objects: 70708, done.
+Counting objects: 100% (70708/70708), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (11470/11470), done.
+Writing objects: 100% (70708/70708), 14.24 MiB | 11.88 MiB/s, done.
+Total 70708 (delta 59063), reused 70684 (delta 59043), pack-reused 0
+remote: Resolving deltas: 100% (59063/59063), done.
+remote: Powered by GITEE.COM [GNK-6.1]
+To https://gitee.com/msntec/openocd-code.git
+ + d7fd2c253...f24a283ac master -> master (forced update)
+Branch 'master' set up to track remote branch 'master' from 'gitee'.
+
+$ git push -fu gitee  --tags
+Enumerating objects: 218, done.
+Counting objects: 100% (215/215), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (96/96), done.
+Writing objects: 100% (151/151), 17.70 KiB | 4.42 MiB/s, done.
+Total 151 (delta 102), reused 103 (delta 55), pack-reused 0
+remote: Resolving deltas: 100% (102/102), completed with 36 local objects.
+remote: Powered by GITEE.COM [GNK-6.1]
+To https://gitee.com/msntec/openocd-code.git
+ * [new tag]             v0.1.0 -> v0.1.0
+ * [new tag]             v0.10.0 -> v0.10.0
+ * [new tag]             v0.10.0-rc1 -> v0.10.0-rc1
+ * [new tag]             v0.10.0-rc2 -> v0.10.0-rc2
+ * [new tag]             v0.11.0 -> v0.11.0
+ * [new tag]             v0.11.0-rc1 -> v0.11.0-rc1
+ * [new tag]             v0.11.0-rc2 -> v0.11.0-rc2
+ * [new tag]             v0.2.0 -> v0.2.0
+ * [new tag]             v0.3.0 -> v0.3.0
+ * [new tag]             v0.3.0-rc0 -> v0.3.0-rc0
+ * [new tag]             v0.3.1 -> v0.3.1
+ * [new tag]             v0.4.0 -> v0.4.0
+ * [new tag]             v0.4.0-rc1 -> v0.4.0-rc1
+ * [new tag]             v0.4.0-rc2 -> v0.4.0-rc2
+ * [new tag]             v0.5.0 -> v0.5.0
+ * [new tag]             v0.5.0-rc1 -> v0.5.0-rc1
+ * [new tag]             v0.5.0-rc2 -> v0.5.0-rc2
+ * [new tag]             v0.6.0 -> v0.6.0
+ * [new tag]             v0.6.0-rc1 -> v0.6.0-rc1
+ * [new tag]             v0.6.0-rc2 -> v0.6.0-rc2
+ * [new tag]             v0.6.1 -> v0.6.1
+ * [new tag]             v0.7.0 -> v0.7.0
+ * [new tag]             v0.7.0-rc1 -> v0.7.0-rc1
+ * [new tag]             v0.7.0-rc2 -> v0.7.0-rc2
+ * [new tag]             v0.8.0 -> v0.8.0
+ * [new tag]             v0.8.0-rc1 -> v0.8.0-rc1
+ * [new tag]             v0.8.0-rc2 -> v0.8.0-rc2
+ * [new tag]             v0.9.0 -> v0.9.0
+ * [new tag]             v0.9.0-rc1 -> v0.9.0-rc1
+
+```
+
+
 
 ## git 仓库注释修改
 

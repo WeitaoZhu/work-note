@@ -1,6 +1,6 @@
 # Cortex-M3 ARM代码编译，链接与启动分析
 
-​        本篇文章以武汉杰开科技的汽车级MCU芯片AC7811为硬件平台，使用GNU GCC作为开发工具。详细分析Compile 、Link 、Loader的过程以及Image(二进制程序)启动的详细分析。整个过程分析涉及到RW可读写DATA段从Flash到Mem的Copy，BSS段的初始化，Stack和Heap的初始化，C库函数移植、利用Semihosting 实现基本的IO等内容。基本可以让你从更深刻的层面理解**`源码`** -> **`编译`** -> **`链接`** -> **`运行`**的整个过程。理解了这些个过程之后，你就对那些从语言编程层面来说难于理解的问题自然领会了，比如：我们的源码时如何生成相应的代码段和数据段，代码段和数据段在哪？全局变量和局部变量的区别到底在哪？Stack和Heap的区别到底在哪？等等一些看起来是规定的东西，书本里一切不自然的概念都需要你用心去理解，去实践，达到自然的状态才有可能去解决实际遇到的问题。本文参考官方文档：[`Makefile`](./pdf/GNU_Make_v3.8_CN.pdf),[`GNU GCC`](./pdf/GNU_GCC_v11.2.0_EN.pdf),[`Linkers and Loaders`](./pdf/Linker.and.Loader(中文版).pdf),[`Cortex-M3 Technical Reference Manual`](./pdf/DDI0337H_cortex_m3_r2p0_trm.pdf)和[**`程序员的自我修养—链接、装载与库`**](./pdf/程序员的自我修养—链接、装载与库(全书带目录).pdf)。
+​        本篇文章以武汉杰开科技的汽车级MCU芯片AC7811为硬件平台，使用GNU GCC作为开发工具。详细分析Compile 、Link 、Loader的过程以及Image(二进制程序)启动的详细分析。整个过程分析涉及到RW可读写DATA段从Flash到Mem的Copy，BSS段的初始化，Stack和Heap的初始化，C库函数移植、利用Semihosting 实现基本的IO等内容。基本可以让你从更深刻的层面理解**`源码`** -> **`编译`** -> **`链接`** -> **`运行`**的整个过程。理解了这些个过程之后，你就对那些从语言编程层面来说难于理解的问题自然领会了，比如：我们的源码时如何生成相应的代码段和数据段，代码段和数据段在哪？全局变量和局部变量的区别到底在哪？Stack和Heap的区别到底在哪？等等一些看起来是规定的东西，书本里一切不自然的概念都需要你用心去理解，去实践，达到自然的状态才有可能去解决实际遇到的问题。本文参考官方文档：[**`Makefile`**](./pdf/GNU_Make_v3.8_CN.pdf),[**`GNU GCC`**](./pdf/GNU_GCC_v11.2.0_EN.pdf),[**`Linkers and Loaders`**](./pdf/Linker.and.Loader(中文版).pdf),[**`Cortex-M3 Technical Reference Manual`**](./pdf/DDI0337H_cortex_m3_r2p0_trm.pdf)和[**`程序员的自我修养—链接、装载与库`**](./pdf/程序员的自我修养—链接、装载与库(全书带目录).pdf)。
 
 ### AUTOChip Cortex-M3 地址映射(Memory mapping)
 
@@ -8,7 +8,7 @@
 
 ![memorylayout](./pic/memorylayout.JPG)
 
-​        从上图中AutoChip AC7811的Flash和SRAM地址范围分别在0x000 0000 ~ 0x2000 0000和0x2000 0000 ~ 0x4000 0000，内部外围总线地址0x4000 0000 ~ 0x6000 0000(这是我们常用的说的*APB*(Advanced Peripheral Bus)，外围总线地址)，外部存储设备地址0x6000 0000 ~ 0x6100 0000(这里是给外挂SPI FLASH映射的地址空间)，Cortex-M3私有Debug，外部和内部总线接口地址0xE000 0000 ~ 0xE100 0000(参考[`Cortex-M3 Technical Reference Manual`](./pdf/DDI0337H_cortex_m3_r2p0_trm.pdf))。本文主要讲的是Flash地址0x000 0000 ~ 0x2000 0000和SRAM地址0x2000 0000 ~ 0x4000 0000的应用。
+​        从上图中AutoChip AC7811的Flash和SRAM地址范围分别在0x000 0000 ~ 0x2000 0000和0x2000 0000 ~ 0x4000 0000，内部外围总线地址0x4000 0000 ~ 0x6000 0000(这是我们常用的说的*APB*(Advanced Peripheral Bus)，外围总线地址)，外部存储设备地址0x6000 0000 ~ 0x6100 0000(这里是给外挂SPI FLASH映射的地址空间)，Cortex-M3私有Debug，外部和内部总线接口地址0xE000 0000 ~ 0xE100 0000(参考[**`Cortex-M3 Technical Reference Manual`**](./pdf/DDI0337H_cortex_m3_r2p0_trm.pdf))。本文主要讲的是Flash地址0x000 0000 ~ 0x2000 0000和SRAM地址0x2000 0000 ~ 0x4000 0000的应用。
 
 ​        下面通过分析AutoChip AC7811的四个boot mode启动模式帮助大家对应的地址映射转换。在[**`AC7811技术参考手册`**](./pdf/ATC_AC781x_ReferenceManual_EN.pdf)page23  **Boot configuration**可以设置**UART1_CTS**和**UART1_RTS**管脚使能不同的启动模式。
 
@@ -260,7 +260,7 @@ clean:
 
 ​        有操作系统的情况下，我们不需要关心可执行映像的具体结构，一个可执行程序文件从静态文件到动态运行这个过程叫Loader&&Run。这个过程是由OS来完成的，应用程序级别的开发是不需要关心这些细节的。对OS如何处理Link&&Loader这些细节感兴趣的，可以参考书籍：
 1. [**`程序员的自我修养—链接、装载与库`**](./pdf/程序员的自我修养—链接、装载与库(全书带目录).pdf)
-2. [`Linkers and Loaders`](./pdf/Linker.and.Loader(中文版).pdf)
+2. [**`Linkers and Loaders`**](./pdf/Linker.and.Loader(中文版).pdf)
 
 ​        我们这里处理的是裸程序的启动细节问题，首先我们要知道的是通过编译器和链接器之后得到的二进制可执行映像的结构。也就是说得出的那个 *.bin 文件里面长啥样？一图胜万言，上张图先。
 
@@ -286,13 +286,177 @@ MEMORY
   RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 32K
   MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
+# (rx) 表示该区域的属性为只读与可执行属性 
+# (xrw)表示该区域的属性为读写与可执行属性
 ```
 
+所以RO表示FLASH区域代码段，RW表示RAM区域初始化的Data数据段与BSS数据段。
 
+链接脚本定义了上面提到的各种段，`.isr_vector`，`.text`, `.data`, `.bss`, `heap`和`stack`等不同的段。
 
+**`.isr_vector`**
 
+```makefile
+/* Define output sections */
+SECTIONS
+{
+  /* The startup code goes first into FLASH */
+  /* isr_vector启动代码中断服务向量表区域从所谓的零地址0x0800 0000开始*/
+  .isr_vector :
+  {
+    . = ALIGN(4);
+    KEEP(*(.isr_vector)) /* Startup code */
+    . = ALIGN(4);
+  } >FLASH
+......
+......
+}
+```
 
+**`.text`段**
 
+```makefile
+/* Define output sections */
+SECTIONS
+{
+......
+......
+  /* The program code and other data goes into FLASH */
+  .text :
+  {
+    . = ALIGN(4);
+    *(.text)           /* .text sections (code) */
+    *(.text*)          /* .text* sections (code) */
+    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
+    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+    *(.glue_7)         /* glue arm to thumb code */
+    *(.glue_7t)        /* glue thumb to arm code */
+	*(.eh_frame)
+
+    KEEP (*(.init))
+    KEEP (*(.fini))
+
+    . = ALIGN(4);
+    _etext = .;        /* define a global symbols at end of code */
+  } >FLASH
+......
+......
+}
+```
+
+**`.data`段和`.bss`段**
+
+**`.data`段**保存的是那些已经初始化了的全局静态变量和局部静态变量。**`.rodata`段**存放的是只读数据。一般是程序里面的只读变量(如const修饰的变量和字符串变量)。**`.bss`段**存放的是未初始化的全局变量和局部变量。
+
+定义了每个段在映像文件中的排布方式，定义了有哪些段需要在运行前从FLASH中搬运到RAM中。我们拿出一个data段来进行说明。
+
+```makefile
+/* Define output sections */
+SECTIONS
+{
+......
+......
+/* used by the startup to initialize data */
+  _sidata = .;
+
+  /* Initialized data sections goes into RAM, load LMA copy after code */
+  .data : AT ( _sidata )
+  {
+    . = ALIGN(4);
+    _sdata = .;        /* create a global symbol at data start */
+    *(.data)           /* .data sections */
+    *(.data*)          /* .data* sections */
+
+    . = ALIGN(4);
+    _edata = .;        /* define a global symbol at data end */
+  } >RAM
+
+  /* Uninitialized data section */
+  . = ALIGN(4);
+  .bss :
+  {
+    /* This is used by the startup in order to initialize the .bss secion */
+    _sbss = .;         /* define a global symbol at bss start */
+    __bss_start__ = _sbss;
+    *(.bss)
+    *(.bss*)
+    *(COMMON)
+
+    . = ALIGN(4);
+    _ebss = .;         /* define a global symbol at bss end */
+    __bss_end__ = _ebss;
+  } >RAM
+
+  PROVIDE ( end = _ebss );
+  PROVIDE ( _end = _ebss );
+......
+......
+}
+```
+
+​        上面的脚本定义了一个段叫data，里面包含了所有Objects文件中的data段，不同文件中定义的全局变量和静态变量全部汇聚到了这一个段中。里面还定义了一些label，这些label其实就是映像文件中各个数据或者段的地址(Address/Offset)，主要用于给程序提供这些地址信息，让程序对映像文件中的这些资源进行处理。你像这个data段，需要在startup初始化阶段将data段从FLASH 复制到RAM中。既然要复制，那程序就需要知道源地址，目的地址以及要复制的长度。开始地址就是data段在整个映像的Offset地址，在这里起了个名字叫`_sdata`，结束地址叫`_edata`，知道了开始地址和结束地址也就知道了信息源的所有信息(开始地址、结束地址、长度)。那目的地址在哪？别着急，目的地址的设置是使用了 **`AT`** 这个指令，意思就是告诉链接器这段内容是需要搬运的，下载地址和运行地址是不一样的。
+
+```makefile
+  .fini_array :
+  {
+......
+......
+  } >FLASH
+/* used by the startup to initialize data */
+  _sidata = .;
+
+  /* Initialized data sections goes into RAM, load LMA copy after code */
+  .data : AT ( _sidata )
+```
+
+​        上面的指令意思是这个段的实际链接地址是 RAM 这个Memory Region中定义的0x20000000开始的地方，根据内容依次往后放。但现在在映像中实际的位置是FLASH 这个Memory Region中定义的0x08000000开始的地方开始放置的，根据内容依次顺序放置的。在FLASH中这个内存域中，前面可能已经放置了启动代码和其他代码段。使用了这个说明后，产生的效果是在映像文件中是连续存放的内容(以0x08000000作为基地址)，但是data段实际的链接地址都是以0x20000000作为基地址的。比如你定义了一个全局变量 int A = 88;，它实际运行的地址在0x20000010这个地址，但是在最开始整个映像都在FLASH中，它可能在映像中的实际存在位置为0x08000100。在程序最开始(还没用到这个全局变量之前)的代码中需要将data段整体地从FLASH中移动到RAM中。如果不用**`AT`**指令的话，映像文件会直接按照链接地址生成，就意味着映像文件会很大，因为代码段0x08000000和数据段0x20000000之间有一个Gap，这个Gap需要使用大量的0来填充。想想都觉着这个映像很大。
+​       咱们在对应的map文件中能找到**`.data `**
+
+```makefile
+.fini_array     0x08004aa8        0x4
+                0x08004aa8                PROVIDE (__fini_array_start = .)
+ *(.fini_array*)
+ .fini_array    0x08004aa8        0x4 d:/toolchain/msys64/mingw32/bin/../lib/gcc/arm-none-eabi/10.1.0/thumb/v7-m/nofp/crtbegin.o
+ *(SORT_BY_NAME(.fini_array.*))
+                0x08004aac                PROVIDE (__fini_array_end = .)
+                0x08004aac                _sidata = .
+
+.data           0x20000000      0x848 load address 0x08004aac
+                0x20000000                . = ALIGN (0x4)
+                0x20000000                _sdata = .
+ *(.data)
+```
+
+意思表示data段数据存储在FLASH，从`_sidata`源地址`0x08004aac`开始，data段长度为0x848，拷贝到目的地址为`0x20000000`。
+
+**`heap`和`stack`**
+
+```makefile
+  .heap :
+  {
+    . = ALIGN(8);
+    __end__ = .;
+    PROVIDE(end = .);
+    PROVIDE(_end = .);
+    PROVIDE(__end = .);
+    __HeapBase = .;
+    . += ORIGIN(RAM) + LENGTH(RAM) - STACK_SIZE;
+    __Heapend = .;
+    __heap_end = .;
+  } > RAM
+
+  .stack :
+  {
+    . = ALIGN(8);
+    . += STACK_SIZE;
+  } > RAM
+
+  /* Initializes stack on the end of block */
+  _estack   = ORIGIN(RAM) + LENGTH(RAM);
+  __StackLimit = _estack - STACK_SIZE;
+  PROVIDE(__stack = _estack);
+  __RAM_END = _estack;
+```
 
 ![stack-1](./pic/stack-1.png)
 

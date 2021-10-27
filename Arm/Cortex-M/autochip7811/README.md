@@ -256,6 +256,32 @@ clean:
 .PHONY: images clean elf bin hex list flash debug
 ```
 
+> ##### Makefile Tips
+>
+> ```makefile
+> (1)常用的变量名(约定俗成的)：
+> CC:表示c编译器版本
+> CFLAGS:表示编译时参数
+> CPPFLAGS:表示预处理参数
+> CXX:表示C++编译器版本
+> CXXFLAGS:表示c++编译时参数
+> LDFLAGS:表示库参数库选项
+> INCLUDE:表示头文件目录
+> TARGET:表示目标名
+> RM:删除选项
+> #: 注释符号
+> (2)一些特殊字符
+> $(变量):对变量取值
+> @:只显示命令结果，忽略命令本身
+> -:如果当前命令出错，忽略错误，继续执行
+> %:通配符，通配符是以遍历的方式实现的
+> (3)特殊变量
+> 用于当前目标：
+> $@：代表目标
+> $<：代表依赖中的第一个
+> $^：代表所有依赖
+> ```
+
 ### 映像结构与运行
 
 ​        有操作系统的情况下，我们不需要关心可执行映像的具体结构，一个可执行程序文件从静态文件到动态运行这个过程叫Loader&&Run。这个过程是由OS来完成的，应用程序级别的开发是不需要关心这些细节的。对OS如何处理Link&&Loader这些细节感兴趣的，可以参考书籍：
@@ -268,7 +294,21 @@ clean:
 
 ​        大家都知道冯.诺依曼架构的计算机，它的基本思想是把“做事情的步骤和所需要的资源都提前编写好，然后让计算机自己根据需要读取操作步骤和资源，实现部分的计算自动化”。计算机的设计思想可谓是精妙的，实现真正的计算自动化也是很多科学家和工程师的夙愿。上面所说的做事情的`步骤`在计算机领域叫`指令`，所需要的`资源`在计算机领域叫`数据`。从计算机体系结构角度去看`可执行映像`的话，其实也就分为`指令`和`数据`两个大的部分。指令部分还是比较单一的，把各个源文件中的指令部分最后都汇聚到一起，形成所谓的`text段`。从功能上分，代码段只是需要CPU去读取，不需要修改，因为可以将其放在RO存储器里。数据这个部分从功能上来看，它必须支持读写，也即数据段执行时必须位于RW存储器里。从功能细节上分数据段又分为`BSS段`，`Data段`，`Stack段`，`Heap段`。从计算机体系结构角度来一一分析，从数据的生存周期角度来看，有的数据的生存周期和程序的生存周期是一致的(`全局变量`)，有的数据的生存周期是根据使用情况即时分配和释放的（`局部变量`、`malloc动态分配的变量`）。`BSS段`和`Data段`属于全生命周期的数据，在源程序里主要是那些在文件域定义的`全局变量`和使用`static`关键字定义的全生命周期变量，`Data`是那些在程序里定义变量时初始化为固定值的量，`BSS段`是那些在程序里定义变量时未初始化的变量，这些变量在映像真正执行前会自动初始化为0。**对BSS段再多说一句，BSS段在映像文件里并不占用具体的空间，因为没有任何具体的信息，只需要在映像文件中提供BSS段的起始地址和大小信息即可**。在映像文件实际执行前，把BSS段要求的Data区域在实际RAM中预留出来并把这些区域初始化为0。短生命周期的数据包括Heap和Stack，它们的特点是随用随申请，用完就释放，比较灵活。Heap是一段预留出来的大空间，可以根据需求随时申请和释放，就是我们常见的malloc free函数操作的空间就是Heap 空间，这部分空间在映像里是独立出来的一段空间，见上面的程序映像图。
 
-​        我们看到RO存储Flash Memory的地址段是：0x08000000–0x0801FFFF 共128K。RW存储SRAM的地址段是：0x20000000–0x20007FFF 共32K。MCU的启动配置是从0x08000000地址开始启动。为节约RAM空间，我们启动时映像的代码段不搬运，直接读取Flash Memory，数据段需要可读写，因此需要将所有的数据段搬移到RAM中去。大致情况见下图：
+​        我们看到RO(`RO-CODE/CODE`+`RO_DATA/CONST`+`RW_DATA`)存储在Flash Memory的地址段是：0x08000000–0x0801FFFF 共128K。
+
+​        RW存储(`RW_CODE`+`RW_DATA`+`ZI_DATA`)SRAM的地址段是：0x20000000–0x20007FFF 共32K。
+
+​        我们拿编译好的MAP文件看一下就一目了然了：
+
+```makefile
+    Total RO  Size (Code + RO Data)                12008 (  11.73kB)
+    Total RW  Size (RW Data + ZI Data)              2664 (   2.60kB)
+    Total ROM Size (Code + RO Data + RW Data)      12068 (  11.79kB)
+```
+
+​        你可以这么理解`RO`包含代码段和只读数据段，`RW`包含数据段和BSS段。
+
+​        MCU的启动配置是从0x08000000地址开始启动。为节约RAM空间，我们启动时映像的代码段不搬运，直接读取Flash Memory，数据段需要可读写，因此需要将所有的数据段搬移到RAM中去。大致情况见下图：
 
 <img src="./pic/loader_data.png" alt="stack-1" style="zoom:80%;" />
 
@@ -290,7 +330,7 @@ MEMORY
 # (xrw)表示该区域的属性为读写与可执行属性
 ```
 
-所以RO表示FLASH区域代码段，RW表示RAM区域初始化的Data数据段与BSS数据段。
+所以也可以这么理解RO表示FLASH区域，RW表示RAM区域。
 
 链接脚本定义了上面提到的各种段，`.isr_vector`，`.text`, `.data`, `.bss`, `heap`和`stack`等不同的段。
 
@@ -440,45 +480,43 @@ SECTIONS
     PROVIDE(_end = .);
     PROVIDE(__end = .);
     __HeapBase = .;
-    . += ORIGIN(RAM) + LENGTH(RAM) - STACK_SIZE;
-    __Heapend = .;
+    . += _minimum_heap_size;
+    __HeapEnd = .;
     __heap_end = .;
-  } > RAM
+  } >RAM
 
   .stack :
   {
     . = ALIGN(8);
-    . += STACK_SIZE;
-  } > RAM
+    . += _minimum_stack_size;
+  } >RAM
 
-  /* Initializes stack on the end of block */
-  _estack   = ORIGIN(RAM) + LENGTH(RAM);
-  __StackLimit = _estack - STACK_SIZE;
+  /* Define the stack.  The stack is full descending so begins just above last byte
+   of RAM.  Note that EABI requires the stack to be 8-byte aligned for a call. */
+  _estack = ORIGIN(RAM) + LENGTH(RAM) - _estack_reserve;
+  _sstack = _estack - _minimum_heap_size;
   PROVIDE(__stack = _estack);
-  __RAM_END = _estack;
 ```
+
+下面两个图形象的描述DATA段，堆和栈在RAM空间分布情况：
 
 ![stack-1](./pic/stack-1.png)
 
+简单举个函数调用的例子帮助大家理解堆和栈原理。
 
+<img src="./pic/memroy_allocation.jpg" alt="memroy_allocation.jpg" style="zoom:40%;" />
 
-![stack-2](./pic/stack-2.png)
+在图中C文件中，全局变量**global_variable**，静态变量**static_variable**和函数内部的静态变量**local_static_variable**都属于**全局变量**存在**Static**区域。函数入参和内部的临时变量会被压入**.stack**区域。函数中**malloc**获取到的内存从**.heap**区域中获取。
 
+那么**Stack**和**Heap**有什么区别呢？如下图：
 
+<img src="./pic/Difference-Between-Stack-and-Heap.jpg" alt="Difference-Between-Stack-and-Heap" style="zoom:65%;" />
 
-![Stack-in-memory-allocation](./pic/Stack-in-memory-allocation.jpg)
-
-
-
-
+下图可以帮助大家理解Heap在应用中容易发生的问题。因为内存申请**memory allocation**是随机的，这样会导致**Fragmented Heap**。如果**Stack**和**Heap**没有界限保护的会导致**Stack Crash**。
 
 <img src="./pic/stack-and-heap.JPG" alt="stack-and-heap.JPG" style="zoom:80%;" />
 
 
-
-<img src="./pic/memroy_allocation.jpg" alt="memroy_allocation.jpg" style="zoom:40%;" />
-
-<img src="./pic/Difference-Between-Stack-and-Heap.jpg" alt="Difference-Between-Stack-and-Heap" style="zoom:50%;" />
 
 
 

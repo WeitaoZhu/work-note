@@ -1,4 +1,4 @@
-# Cortex-M3 ARM代码编译，链接与启动分析
+# Cortex-M3 ARM代码编译，链接与启动过程深度分析
 
 ​        本篇文章以武汉杰开科技的汽车级MCU芯片AC7811为硬件平台，使用GNU GCC作为开发工具。详细分析Compile 、Link 、Loader的过程以及Image(二进制程序)启动的详细分析。整个过程分析涉及到RW可读写DATA段从Flash到Mem的Copy，BSS段的初始化，Stack和Heap的初始化，C库函数移植、利用Semihosting 实现基本的IO等内容。基本可以让你从更深刻的层面理解**`源码`** -> **`编译`** -> **`链接`** -> **`运行`**的整个过程。理解了这些个过程之后，你就对那些从语言编程层面来说难于理解的问题自然领会了，比如：我们的源码时如何生成相应的代码段和数据段，代码段和数据段在哪？全局变量和局部变量的区别到底在哪？Stack和Heap的区别到底在哪？等等一些看起来是规定的东西，书本里一切不自然的概念都需要你用心去理解，去实践，达到自然的状态才有可能去解决实际遇到的问题。本文参考官方文档：[**`Makefile`**](./pdf/GNU_Make_v3.8_CN.pdf),[**`GNU GCC`**](./pdf/GNU_GCC_v11.2.0_EN.pdf),[**`Linkers and Loaders`**](./pdf/Linker.and.Loader(中文版).pdf),[**`Cortex-M3 Technical Reference Manual`**](./pdf/DDI0337H_cortex_m3_r2p0_trm.pdf)和[**`程序员的自我修养—链接、装载与库`**](./pdf/程序员的自我修养—链接、装载与库(全书带目录).pdf)。
 
@@ -10,7 +10,7 @@
 
 ​        从上图中AutoChip AC7811的Flash和SRAM地址范围分别在0x000 0000 ~ 0x2000 0000和0x2000 0000 ~ 0x4000 0000，内部外围总线地址0x4000 0000 ~ 0x6000 0000(这是我们常用的说的*APB*(Advanced Peripheral Bus)，外围总线地址)，外部存储设备地址0x6000 0000 ~ 0x6100 0000(这里是给外挂SPI FLASH映射的地址空间)，Cortex-M3私有Debug，外部和内部总线接口地址0xE000 0000 ~ 0xE100 0000(参考[**`Cortex-M3 Technical Reference Manual`**](./pdf/DDI0337H_cortex_m3_r2p0_trm.pdf))。本文主要讲的是Flash地址0x000 0000 ~ 0x2000 0000和SRAM地址0x2000 0000 ~ 0x4000 0000的应用。
 
-​        下面通过分析AutoChip AC7811的四个boot mode启动模式帮助大家对应的地址映射转换。在[**`AC7811技术参考手册`**](./pdf/ATC_AC781x_ReferenceManual_EN.pdf)page23  **Boot configuration**可以设置**UART1_CTS**和**UART1_RTS**管脚使能不同的启动模式。
+​        下面通过分析AutoChip AC7811的四个boot mode启动模式帮助大家理解对应的地址映射转换。在[**`AC7811技术参考手册`**](./pdf/ATC_AC781x_ReferenceManual_EN.pdf)page23  **Boot configuration**可以设置**UART1_CTS**和**UART1_RTS**管脚使能不同的启动模式。
 
 <img src="./pic/bootmode.JPG" alt="bootmode" style="zoom:90%;" />
 
@@ -308,7 +308,79 @@ clean:
 
 ​        你可以这么理解`RO`包含代码段和只读数据段，`RW`包含数据段和BSS段。
 
-​        MCU的启动配置是从0x08000000地址开始启动。为节约RAM空间，我们启动时映像的代码段不搬运，直接读取Flash Memory，数据段需要可读写，因此需要将所有的数据段搬移到RAM中去。大致情况见下图：
+​        MCU的启动配置是从0x08000000地址开始启动。为节约RAM空间，我们启动时映像的代码段不搬运，直接读取Flash Memory，数据段需要可读写，因此需要将所有的数据段搬移到RAM中去。我们再看我们的启动代码**startup_ac78xx.s**, 我们有**CopyDataInit**和**FillZerobss**。
+
+```assembly
+.global  g_pfnVectors
+.global  Default_Handler
+
+/* start address for the initialization values of the .data section. 
+defined in linker script */
+.word  _sidata
+/* start address for the .data section. defined in linker script */  
+.word  _sdata
+/* end address for the .data section. defined in linker script */
+.word  _edata
+/* start address for the .bss section. defined in linker script */
+.word  _sbss
+/* end address for the .bss section. defined in linker script */
+.word  _ebss
+/* stack used for SystemInit_ExtMemCtl; always internal RAM used */
+
+/**
+ * @brief  This is the code that gets called when the processor first
+ *          starts execution following a reset event. Only the absolutely
+ *          necessary set is performed, after which the application
+ *          supplied main() routine is called. 
+ * @param  None
+ * @retval : None
+*/
+
+    .section  .text.Reset_Handler
+  .weak  Reset_Handler
+  .type  Reset_Handler, %function
+Reset_Handler:  
+
+/* Copy the data segment initializers from flash to SRAM */  
+  movs  r1, #0
+  b  LoopCopyDataInit
+
+CopyDataInit:
+  ldr  r3, =_sidata
+  ldr  r3, [r3, r1]
+  str  r3, [r0, r1]
+  adds  r1, r1, #4
+    
+LoopCopyDataInit:
+  ldr  r0, =_sdata
+  ldr  r3, =_edata
+  adds  r2, r0, r1
+  cmp  r2, r3
+  bcc  CopyDataInit
+  ldr  r2, =_sbss
+  b  LoopFillZerobss
+/* Zero fill the bss segment. */  
+FillZerobss:
+  movs  r3, #0
+  str  r3, [r2], #4
+    
+LoopFillZerobss:
+  ldr  r3, = _ebss
+  cmp  r2, r3
+  bcc  FillZerobss
+
+/* Call the clock system intitialization function.*/
+  bl  SystemInit   
+/* Call static constructors */
+/*    bl __libc_init_array    */
+/* Call the application's entry point.'*/
+  bl  main
+  bx  lr    
+.size  Reset_Handler, .-Reset_Handler
+
+```
+
+大致情况见下图：
 
 <img src="./pic/loader_data.png" alt="stack-1" style="zoom:80%;" />
 
@@ -516,7 +588,7 @@ SECTIONS
 
 <img src="./pic/stack-and-heap.JPG" alt="stack-and-heap.JPG" style="zoom:80%;" />
 
+## 总结
 
-
-
+​        暂时就讲这么多了。不过应该够帮助大家去解密CotrexM3 ARM的代码运行原理。这样你的代码如何跑，跑在哪里完全支配你的手中。本文可能有些描述不准确、不合理或有误的地方，希望多多指正。我会尽量完善，至于有些不够详尽的地方会在后面找时间填补上。
 

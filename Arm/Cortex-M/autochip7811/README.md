@@ -592,3 +592,14 @@ SECTIONS
 
 ​        暂时就讲这么多了。不过应该够帮助大家去解密CotrexM3 ARM的代码运行原理。这样你的代码如何跑，跑在哪里完全支配你的手中。本文可能有些描述不准确、不合理或有误的地方，希望多多指正。我会尽量完善，至于有些不够详尽的地方会在后面找时间填补上。
 
+
+
+### 参考资料
+
+[Difference between stack and heap](https://microcontrollerslab.com/difference-between-stack-and-heap/)
+[The Difference Between Stack and Heap Based Memory](https://danielmiessler.com/study/difference-stack-heap-based-memory/)
+[Stack and Heap Layout of Embedded Projects](https://visualgdb.com/documentation/embedded/stackheap/)
+[STM32 memory allocation parsing and variable storage location](https://www.programmerall.com/article/93711741529/)
+[what does system memory work actually in STM32F103 on ARM memory map?](https://stackoverflow.com/questions/45753069/what-does-system-memory-work-actually-in-stm32f103-on-arm-memory-map)
+[Introduction to RTOS - Solution to Part 4 (Memory Management)](https://www.digikey.com/en/maker/projects/introduction-to-rtos-solution-to-part-4-memory-management/6d4dfcaa1ff84f57a2098da8e6401d9c)
+

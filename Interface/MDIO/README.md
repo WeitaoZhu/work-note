@@ -65,12 +65,40 @@ MDIO接口最初是由IEEE RFC802.3中的`22号条款`定义的，在最初的�
 
 ----------
 
-|   Frame   | Preamble (32bits) | Start (2bits) | OP Code (2bits) | PHYAD (5bits) | DEVAD (5bits) | Turn Around (2bits) | Data (16bits) | Idle |
+|   Frame   | Preamble (32bits) | Start (2bits) | OP Code (2bits) | PRTAD (5bits) | DEVAD (5bits) | Turn Around (2bits) | Data (16bits) | Idle |
 | :-------: | :---------------: | :-----------: | :-------------: | :-----------: | :-----------: | :-----------------: | :-----------: | ---- |
 |  Address  |     1.......1     |      00       |       00        |     PPPPP     |     EEEEE     |         10          | A15.......A0  | Z*   |
 |   Write   |     1.......1     |      00       |       01        |     PPPPP     |     EEEEE     |         10          | D15.......D0  | Z*   |
 |   Read    |     1.......1     |      00       |       11        |     PPPPP     |     EEEEE     |         Z0          | D15.......D0  | Z*   |
 | Read Inc. |     1.......1     |      00       |       10        |     PPPPP     |     EEEEE     |         Z0          | D15.......D0  | Z*   |
+
+上图中*表示高阻态，这时MDIO的状态由一个外部的1.5KΩ电阻决定。
+
+**Preamble+Start：** 32bits的前导码以及2bit的开始位。帧开始标志， 为了区别CL22，Clause45 的开始标志为比特“00”。
+
+**OP Code：** 操作码，Clause45有4种操作码，比特“00”表示设置当前寄存器地址，比特“01”表示写当前寄存器。比特“10”表示读当前寄存器，比特“11”表示读当前寄存器读完后把当前寄存器的值加1，用于顺序读。
+
+**PRTAD：** Port Address，端口地址， 也称物理地址。
+
+**DEVAD**：器件地址，CL45新增概念，各值与器件对应如下。
+
+| Value  | Device             |
+| ------ | ------------------ |
+| 00000  | Reserved           |
+| 00001  | PMD/PMA            |
+| 00010  | WIS                |
+| 00011  | PCS                |
+| 00100  | PHY XS             |
+| 00101  | DTE XS             |
+| ------ | ------------------ |
+
+**REGAD：** 用来选MMD的65536个寄存器中的某个寄存器的地址。
+
+**Turn Around：** 2bits的TA，在读命令中，MDIO在此时由MAC驱动改为PHY驱动，并等待一个时钟周期准备发送数据。在写命令中，不需要MDIO方向发生变化，则只是等待两个时钟周期准备写入数据。
+
+**Data：** 帧的寄存器的数据域，16bits，若为读操作，则为MMD送到STA的数据，若为写操作，则为STA送到MMD数据。
+
+**Idle：** 空闲状态，此时MDIO无源驱动，处高阻状态，但一般用上拉电阻使其处在高电平。
 
 第45号条款的主要变化是如何访问寄存器。在第22中，一个单独的帧指定要读或写的地址和数据，同时完成了这些工作。45号中改变这种范式，第一个地址帧发送到指定的MMD和寄存器，然后发送第二帧来执行读或写。
 
@@ -82,19 +110,23 @@ MDIO接口最初是由IEEE RFC802.3中的`22号条款`定义的，在最初的�
 
 ##### 读第45号条款的寄存器操作：
 
-Write Address AAAAAAAAAAAAAAAA to Device EEEEE on Port PPPPP 
+Write Address AAAAAAAAAAAAAAAA to Device VVVVV on Port PPPPP 
 
-Read Register From Device EEEEE on Port PPPPP 
+<img src="./pic/clause45_address.PNG" alt="clause45 read" style="zoom:75%;" />
 
-<img src="./pic/clause45_read.PNG" alt="clause45 read" style="zoom:75%;" />
+Read Register From Device VVVVV on Port PPPPP 
+
+<img src="./pic/clause45_read_step.PNG" alt="clause45 read" style="zoom:75%;" />
 
 ##### 写第45号条款的寄存器操作：
 
-Write Address AAAAAAAAAAAAAAAA to Device EEEEE on Port PPPPP 
+Write Address AAAAAAAAAAAAAAAA to Device VVVVV on Port PPPPP 
 
-Write Register To Device EEEEE on Port PPPPP
+<img src="./pic/clause45_address.PNG" alt="clause45 read" style="zoom:75%;" />
 
-<img src="./pic/clause45_write.PNG" alt="clause45 write" style="zoom:75%;" />
+Write Register To Device VVVVV on Port PPPPP
+
+<img src="./pic/clause45_write_step.PNG" alt="clause45 write" style="zoom:75%;" />
 
 每个操作都需要执行两个步骤。
 

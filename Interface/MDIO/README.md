@@ -164,3 +164,9 @@ Write Register To C22 Register 14 on Port PPPPP
 
 每个操作都需要执行四个步骤。
 
+
+
+**[LInux GPIO 模拟 MDIO 接口使用代码](https://www.jianshu.com/p/910b235ea6c4)**
+
+**[gpio模拟mdc/mdio通信](https://www.cnblogs.com/hjj801006/p/4864638.html)**
+

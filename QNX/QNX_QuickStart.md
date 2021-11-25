@@ -1,13 +1,12 @@
-# QNX学习日志
+# 快速搭建QNX® SDP(Software Development Platform)
 
 
 
-# 系统简介
+为了把写好的程序在 QNX Neutrino RTOS 下运行起来，您首先需要的是 QNX 软件开发平台 (SDP)。 该平台包含构建程序所需的工具，例如编译器和链接器，QNX Neutrino 支持的所有 CPU 架构预编译。下面将帮助您安装 QNX 软件开发平台，以便您可以在 QNX Neutrino 目标板上运行您的程序。
 
-`QNX`是一个分布式、可扩展、遵从`POSIX`规范的类`Unix`硬实时操作系统。
- `QNX`为微内核的架构，微内核只提供进程调度、进程间通信、底层网络通信和中断处理四种服务。驱动程序、协议栈、文件系统、应用程序等都在微内核之外内存受保护的安全的用户空间内运行，组件之间能避免相互影响，在遇到故障时也能重启。
 
-在[QNX Neutrino RTOS – Embedded OS官网](https://blackberry.qnx.com/en/software-solutions/embedded-software/qnx-neutrino-rtos)的Developers菜单下的[Community(Foundry27)](https://community.qnx.com/sf/sfmain/do/viewProject/projects.bsp)你可以找到相应芯片厂家的基础BSP开发包。
+
+首先在[QNX Neutrino RTOS – Embedded OS官网](https://blackberry.qnx.com/en/software-solutions/embedded-software/qnx-neutrino-rtos)的Developers菜单下的[Community(Foundry27)](https://community.qnx.com/sf/sfmain/do/viewProject/projects.bsp)你可以找到相应芯片厂家的基础BSP开发包。
 
 以[BSP Directory](https://community.qnx.com/sf/wiki/do/viewPage/projects.bsp/wiki/BSPAndDrivers)的Texas Instruments DRA71x Jacinto6 Entry BSP for QNX SDP 6.6为例
 
@@ -388,26 +387,6 @@ cp /home/bspserver/workspace/Upgrade_HAL/trunk/example/main.c /home/bspserver/wo
 
 
 
-**QNX® Neutrino® RTOS** System Architecture
+参考文献：
 
-| To find out about:                                           | Go to:                                                       |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| OS design goals; message-passing IPC                         | [The Philosophy of the QNX Neutrino RTOS](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/intro.html) |
-| System services                                              | [The QNX Neutrino Microkernel](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/kernel.html) |
-| Sharing information between processes                        | [Interprocess Communication (IPC)](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/ipc.html) |
-| System event monitoring                                      | [The Instrumented Microkernel](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/trace.html) |
-| Working on a system with more than one processor             | [Multicore Processing](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/smp.html) |
-| Memory management, pathname management, etc.                 | [Process Manager](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/proc.html) |
-| Shared objects                                               | [Dynamic Linking](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/dll.html) |
-| Device drivers                                               | [Resource Managers](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/resource.html) |
-| Image, RAM, Power-Safe, DOS, Flash, NFS, CIFS, Ext2, and other filesystems | [Filesystems](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/fsys.html) |
-| Persistent Publish/Subscribe (PPS)                           | [PPS](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/pps.html) |
-| Serial and parallel devices                                  | [Character I/O](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/char.html) |
-| Network subsystem                                            | [Networking Architecture](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/net.html) |
-| Native QNX Neutrino networking                               | [Native Networking (Qnet)](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/qnet.html) |
-| TCP/IP implementation                                        | [TCP/IP Networking](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/tcpip.html) |
-| Fault recovery                                               | [High Availability](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/ham.html) |
-| Sharing resources among competing processes                  | [Adaptive Partitioning](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/adaptive.html) |
-| An overview of hard and soft real time                       | [What is Real Time and Why Do I Need It?](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/what_is_realtime.html) |
-| Terms used in QNX Neutrino documentation                     | [Glossary](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.sys_arch/topic/glossary.html) |
-
+[Five Seven Steps to Developing a QNX Neutrino Program](http://www.qnx.com/developers/docs/7.0.0/#com.qnx.doc.qnxsdp.quickstart/topic/about.html)

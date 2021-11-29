@@ -349,7 +349,25 @@ bspserver@ubuntu:~/workspace/SDP_QNX660/target/qnx6/armle-v7$ tree -L 1
 
 ```
 
-通过命令行编译自己写的一个中间件程序效果如下：
+
+
+解压后BSP zip压缩包后，进入该压缩包的根目录，可以使用make命令来进行编译：
+
+> - make all
+>   进行所有的操作，包括install、links，还有编译链接目标image；
+> - make prebuilt
+>   将/prebuilt目录下的文件内容，拷贝到/install目录下；
+> - make install
+>   执行该命令后，首先触发make prebuilt操作，然后进入/src目录，再执行两步：1）make hinstall，将/src目录中的公共头文件拷贝到/install目录下；2）make install去把/src目录中的文件进行编译，并将编译后的结果放置到/install目录中，此外也会拷贝src/hardware/startup/boards/下的构建文件，并重命名为board.build，board指的是开发板；
+> - make links
+>   从install/cpu/boot/build/board.build到images/board.build创建符号链接，其中cpu指的是处理器类型，board指开发板；
+> - make images
+>   进入images目录中，并执行该路径中的Makefile文件，根据make links目标期间的构建文件生成一个IFS（Image File System）文件；
+> - 直接执行make的话，相当于make all。
+
+
+
+也可以单独通过命令行编译自己写的一个中间件程序效果如下：
 
 ```shell
 bspserver@ubuntu:~/workspace/Upgrade_HAL$ ./build.sh 

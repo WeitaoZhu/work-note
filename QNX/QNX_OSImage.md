@@ -6,9 +6,9 @@ OS镜像是指包含OS、可执行文件、与程序相关的数据等的文件�
 
 本文解释如何:
 
-- 使用 mkifs 构建OS镜像 (看“[Building an OS image](#Building an OS image)”)
-- 构建闪存文件系统映像或嵌入式事务文件系统映像 (看“[Building a flash filesystem image](#Building a flash filesystem image)”)
-- 将可引导的操作系统映像和文件系统映像合并为一个可以传输到目标系统的映像 (看“[Combining multiple image files](#Combining multiple image files)”)
+- 使用 mkifs 构建OS镜像 (看“[Building an OS image](http://www.qnx.com/developers/docs/7.0.0/com.qnx.doc.neutrino.building/topic/os_images/image_build.html)”)
+- 构建闪存文件系统映像或嵌入式事务文件系统映像 (看“[Building a flash filesystem image](http://www.qnx.com/developers/docs/7.0.0/com.qnx.doc.neutrino.building/topic/os_images/nto_flash.html)”)
+- 将可引导的操作系统映像和文件系统映像合并为一个可以传输到目标系统的映像 (看“[Combining multiple image files](http://www.qnx.com/developers/docs/7.0.0/com.qnx.doc.neutrino.building/topic/os_images/multiple_images_combine.html)”)
 
 #### 镜像类型
 

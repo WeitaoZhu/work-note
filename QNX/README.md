@@ -1,4 +1,4 @@
-# QNX®  Neutrino 微内核
+# QNX®  Neutrino 进程间通信
 
 ### 介绍
 

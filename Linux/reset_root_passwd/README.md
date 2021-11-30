@@ -86,6 +86,8 @@ exec /sbin/init
 如果执行passwd时，提示以下错误：
 
 ```shell
+Enter new UNIX password:
+Retype new UNIX password:
 passwd: Authentication token manipulation error
 passwd: password unchanged
 ```

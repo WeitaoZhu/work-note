@@ -34,6 +34,7 @@
   - 链接：https://pan.baidu.com/s/1x2hsqTXFZAG7Y2HJE4zgww 
     提取码：potg 
     复制这段内容后打开百度网盘手机App，操作更方便哦
+  - [计算机网络，自顶向下法 第八版-Jim Kurose Homepage (umass.edu)](http://gaia.cs.umass.edu/kurose_ross/lectures.php)
 - [因果推断Causal Inference，中英文字幕](https://www.bilibili.com/video/BV1c64y1S7eT/)
   - 链接：https://pan.baidu.com/s/1WdpaMF4N6XS9jTu761D-Eg 
     提取码：t69w 

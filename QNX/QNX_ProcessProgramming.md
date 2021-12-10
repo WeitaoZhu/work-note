@@ -1,4 +1,4 @@
-# QNX®  Neutrino POSIX进程与多线程编程
+# QNX®  Neutrino POSIX进程编程
 
 ### 介绍
 

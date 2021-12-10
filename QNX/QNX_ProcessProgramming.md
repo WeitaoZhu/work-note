@@ -8,7 +8,7 @@
 
 在POSIX或者操作系统调用的基础上还可以封装面向不同领域的领域应用接口。为了开发的便携性(如更多可复用的功能)，人们逐渐开始为各个应用领域定义应用开发接口与软件架构。例如，面向汽车领域，一些车企联合起来定义**AUTOSAR**（**AUT**omotive **O**pen **S**ystem **AR**chitecture），以方便汽车电子平台各个部件的开发者遵循同一个标准和软件架构进行开发。随着汽车智能化引起的功能需求不断增加，AUTOSAR也逐步演进到李Adaptive AUTOSAR，并提供更为丰富的应用开发接口与软件架构。
 
-### 接下来我们主要针对POSIX的进程和线程编译开始展开：
+### 接下来我们主要针对POSIX的进程编程
 
 什么是**进程**。操作系统提出来进程的抽象：每个进程都对应于一个运行中的程序。进程可以处于以下几种状态。
 
@@ -165,9 +165,7 @@ Z+      4966    4967 [alarm_fork] <defunct>
 
 在QNX中用法一样。但是QNX不支持多线程的进程fork。
 
-
-
-### 进程的执行： exec*()
+#### 进程的执行： exec*()
 
 在fork完成后，我们得到了一个与父进程几乎完全相同的子进程，可是在很多时候’用户需要子进程执行与父进程完全不同的任务。当我们调用fork()创建了一个进程之后，通常将子进程替换成新的进程映象，这可以用exec系列的函数来进行。当然，exec系列的函数也可以将当前进程替换掉。
 
@@ -257,7 +255,7 @@ This is main process. The child status is 0, and child pid is 6430, WIFEXITED(ch
 
 <img src=".\pic\fork_process_lifesycle.png" alt="fork_process_lifesycle" style="zoom:80%;" />
 
-### 进程创建： posix_spawn*()
+#### 进程创建： posix_spawn*()
 
 posix_spawn是POSIX提供的另一种创建进程的方式，最初是为不支持fork的机器设计的。posix_spawn可以被认为是fork和exec两者功能的结合，它会使用类似于fork的方法（或者直接调用fork）获得一份进程的拷贝’然后调用exec执行。它可以用来用fork和exec代替相对复杂的“**fork-exec-wait**”方法。
 

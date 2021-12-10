@@ -163,21 +163,298 @@ Z+      4966    4967 [alarm_fork] <defunct>
 
 为什么会出现**僵尸进程(zombie)**，大家可以带着这个问题思考一下样例代码是不是有问题？
 
-从闹钟fork实例程序，可以得出fork创建进程的流程图如下：
-
-<img src=".\pic\fork_process_lifesycle.png" alt="fork_process_lifesycle" style="zoom:80%;" />
-
-
-
 在QNX中用法一样。但是QNX不支持多线程的进程fork。
 
 
 
+### 进程的执行： exec*()
 
+在fork完成后，我们得到了一个与父进程几乎完全相同的子进程，可是在很多时候’用户需要子进程执行与父进程完全不同的任务。当我们调用fork()创建了一个进程之后，通常将子进程替换成新的进程映象，这可以用exec系列的函数来进行。当然，exec系列的函数也可以将当前进程替换掉。
+
+**函数原型**
+
+```c
+int execl(const char *path, const char *arg, ...);
+int execlp(const char *file, const char *arg, ...);
+int execle(const char *path, const char *arg, ..., char * const envp[]);
+int execv(const char *path, char *const argv[]);
+int execvp(const char *file, char *const argv[]);
+int execvpe(const char *file, char *const argv[], char *const envp[]);
+```
+
+**参数说明**
+
+>path：可执行文件的路径名字
+>arg：可执行程序所带的参数，第一个参数为可执行文件名字，没有带路径且arg必须以NULL结束
+>file：如果参数file中包含/，则就将其视为路径名，否则就按 PATH环境变量，在它所指定的各目录中搜寻可执行文件。
+>
+>exec族函数参数极难记忆和分辨，函数名中的字符会给我们一些帮助：
+>l : 使用参数列表
+>p：使用文件名，并从PATH环境进行寻找可执行文件
+>v：应先构造一个指向各参数的指针数组，然后将该数组的地址作为这些函数的参数。
+>e：多了envp[]数组，使用新的环境变量代替调用进程的环境变量
+
+**fork()和exec()函数实例**
+
+```c++
+int main(int argc, char *argv[])
+{
+    pid_t pid;
+    char *arg[] = {"ls", "-l", NULL}; 
+ 
+    cout << "This is main process, PID is " << getpid() << endl;
+    pid = fork();
+    if (pid < 0){
+        cout << "fork error..." << endl;
+        exit(-1);
+    }
+    else if (pid == 0){//This is the child process
+       cout << "This is child process, PID is " << getpid() << endl;
+       //execl("/bin/ls", "ls", "-l", NULL); 
+       //execlp("ls", "ls", "-l", NULL);
+       //execle("/bin/ls", "ls", "-l", NULL, NULL);
+       //execv("/bin/ls", arg);
+       //execvp("ls", arg);
+       execve("/bin/ls", arg, NULL);//上面的六个函数的运行结果都是一样的
+       exit(11);//将子进程的退出码设置为11
+    }
+    else{//This is the main process
+        cout << "This is main process waiting for the exit of child process." << endl;
+        int child_status;
+        pid = wait(&child_status);
+        cout << "This is main process. The child status is " << child_status << ", and child pid is " << pid << ", WIFEXITED(child_status) is " << WIFEXITED(child_status) << ", WEXITSTATUS(child_status) is " << WEXITSTATUS(child_status) << endl;
+    }
+ 
+    exit(0);
+}
+```
+
+显示结果如下：
+
+```shell
+bspserver@ubuntu:~/workspace/posix_threads/bin$ ./fork_exec 
+This is main process, PID is 6429
+This is main process waiting for the exit of child process.
+This is child process, PID is 6430
+
+total 10
+-rwxrwxr-x 1 bspserver bspserver 23496 Dec  6 22:03 alarm_cond
+-rwxrwxr-x 1 bspserver bspserver 20672 Dec  9 00:56 alarm_fork
+-rwxrwxr-x 1 bspserver bspserver 22392 Dec  6 22:03 alarm_mutex
+-rwxrwxr-x 1 bspserver bspserver 21048 Dec  6 22:03 alarm_thread
+-rwxrwxr-x 1 bspserver bspserver 39736 Dec  9 03:04 fork_exec
+-rwxrwxr-x 1 bspserver bspserver 21840 Dec  9 01:19 posix_spawn
+-rwxrwxr-x 1 bspserver bspserver 21400 Dec  6 22:03 pthread_barriers
+-rwxrwxr-x 1 bspserver bspserver 22080 Dec  6 22:03 pthread_rwlock
+-rwxrwxr-x 1 bspserver bspserver 21416 Dec  6 22:03 pthread_semaphore
+-rwxrwxr-x 1 bspserver bspserver 21176 Dec  6 22:03 pthread_spinlock
+
+This is main process. The child status is 0, and child pid is 6430, WIFEXITED(child_status) is 1, WEXITSTATUS(child_status) is 0
+
+```
+
+从**fork()**和**fork()-exec()**实例程序，可以得出**fork()**与**fork()-exec()**创建进程的流程图如下：
+
+<img src=".\pic\fork_process_lifesycle.png" alt="fork_process_lifesycle" style="zoom:80%;" />
+
+### 进程创建： posix_spawn*()
+
+posix_spawn是POSIX提供的另一种创建进程的方式，最初是为不支持fork的机器设计的。posix_spawn可以被认为是fork和exec两者功能的结合，它会使用类似于fork的方法（或者直接调用fork）获得一份进程的拷贝’然后调用exec执行。它可以用来用fork和exec代替相对复杂的“**fork-exec-wait**”方法。
+
+虽然posix_spawn完成的任务类似于fork和exec的组合，但它的实现并不是对fork和exec的简单调用。目前，posix_spawn的性能要明显优于“fork+exec”且执行时间与原进程的内存无关。因此’当进程创建的性能比较关键时，应用程序可以选择牺牲“fork+exec”的灵活度，改用posix_spawn.
+
+**函数原型**
+
+```c
+#include <spawn.h>
+ 
+int posix_spawn(pid_t *restrict pid, const char *restrict path,
+                const posix_spawn_file_actions_t *restrict file_actions,
+                const posix_spawnattr_t *restrict attrp,
+                char *const argv[restrict],
+                char *const envp[restrict]);
+int posix_spawnp(pid_t *restrict pid, const char *restrict file,
+                const posix_spawn_file_actions_t *restrict file_actions,
+                const posix_spawnattr_t *restrict attrp,
+                char *const argv[restrict],
+                char *const envp[restrict]);
+```
+
+**参数说明**
+
+>* pid: 子进程 pid（pid 参数指向一个缓冲区，该缓冲区用于返回新的子进程的进程ID）
+>
+>* path: 可执行文件的路径 path（其实就是可以调用某些系统命令，只不过要指定其完整路径）
+>
+>* file_actions: 参数指向生成文件操作对象，该对象指定要在子对象之间执行的与文件相关的操作
+>
+>* attrp: 参数指向一个属性对象，该对象指定创建的子进程的各种属性.指向一个posix_spawnattr_t对象，也可以是NULL表示使用默认值，这个对象     使用posix_spawnattr_init初始化，使用*_destroy销毁，使用*_setflags、*_setpgroup、*_setsigdefault、*_setsigmask等设置参数，其中*_setflags可以设置POSIX_SPAWN_RESETIDS、*_SETPGROUP、*_SETSIGMASK、*_SETSIGDEFAULT等（Linux、FreeBSD、macOS分别还有其它支持的参数，这里只列出了公共部分)
+>
+>* argv: 参数指定在子进程中执行的程序的参数列表
+>* envp: 参数指定在子进程中执行的程序的环境变量
+
+**posix_spawn()函数实例**
+
+```C
+#include <spawn.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <wait.h>
+#include <errno.h>
+
+#define errExit(msg)    do { perror(msg); \
+                             exit(EXIT_FAILURE); } while (0)
+
+#define errExitEN(en, msg) \
+                        do { errno = en; perror(msg); \
+                             exit(EXIT_FAILURE); } while (0)
+
+char **environ;
+
+int
+main(int argc, char *argv[])
+{
+    pid_t child_pid;
+    int s, opt, status;
+    sigset_t mask;
+    posix_spawnattr_t attr;
+    posix_spawnattr_t *attrp;
+    posix_spawn_file_actions_t file_actions;
+    posix_spawn_file_actions_t *file_actionsp;
+
+    /* Parse command-line options, which can be used to specify an
+       attributes object and file actions object for the child. */
+
+    attrp = NULL;
+    file_actionsp = NULL;
+
+    while ((opt = getopt(argc, argv, "sc")) != -1) {
+        switch (opt) {
+        case 'c':       /* -c: close standard output in child */
+
+            /* Create a file actions object and add a "close"
+               action to it. */
+
+            s = posix_spawn_file_actions_init(&file_actions);
+            if (s != 0)
+                errExitEN(s, "posix_spawn_file_actions_init");
+
+            s = posix_spawn_file_actions_addclose(&file_actions,
+                                                  STDOUT_FILENO);
+            if (s != 0)
+                errExitEN(s, "posix_spawn_file_actions_addclose");
+
+            file_actionsp = &file_actions;
+            break;
+
+        case 's':       /* -s: block all signals in child */
+
+            /* Create an attributes object and add a "set signal mask"
+               action to it. */
+
+            s = posix_spawnattr_init(&attr);
+            if (s != 0)
+                errExitEN(s, "posix_spawnattr_init");
+            s = posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGMASK);
+            if (s != 0)
+                errExitEN(s, "posix_spawnattr_setflags");
+
+            sigfillset(&mask);
+            s = posix_spawnattr_setsigmask(&attr, &mask);
+            if (s != 0)
+                errExitEN(s, "posix_spawnattr_setsigmask");
+
+            attrp = &attr;
+            break;
+        }
+    }
+
+    /* Spawn the child. The name of the program to execute and the
+       command-line arguments are taken from the command-line arguments
+       of this program. The environment of the program execed in the
+       child is made the same as the parent's environment. */
+
+    s = posix_spawnp(&child_pid, argv[optind], file_actionsp, attrp,
+                     &argv[optind], environ);
+    if (s != 0)
+        errExitEN(s, "posix_spawn");
+
+    /* Destroy any objects that we created earlier. */
+
+    if (attrp != NULL) {
+        s = posix_spawnattr_destroy(attrp);
+        if (s != 0)
+            errExitEN(s, "posix_spawnattr_destroy");
+    }
+
+    if (file_actionsp != NULL) {
+        s = posix_spawn_file_actions_destroy(file_actionsp);
+        if (s != 0)
+            errExitEN(s, "posix_spawn_file_actions_destroy");
+    }
+
+    printf("PID of child: %jd\n", (intmax_t) child_pid);
+
+    /* Monitor status of the child until it terminates. */
+
+    do {
+        s = waitpid(child_pid, &status, WUNTRACED | WCONTINUED);
+        if (s == -1)
+            errExit("waitpid");
+
+        printf("Child status: ");
+        if (WIFEXITED(status)) {
+            printf("exited, status=%d\n", WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            printf("killed by signal %d\n", WTERMSIG(status));
+        } else if (WIFSTOPPED(status)) {
+            printf("stopped by signal %d\n", WSTOPSIG(status));
+        } else if (WIFCONTINUED(status)) {
+            printf("continued\n");
+        }
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+    exit(EXIT_SUCCESS);
+}
+```
+
+显示结果如下：
+
+```shell
+bspserver@ubuntu:~/workspace/posix_threads/bin$ ./posix_spawn date
+PID of child: 8698
+//子进程 date 运行结果
+Thu Dec  9 17:49:21 PST 2021
+//父进程检测子进程结束状态
+Child status: exited, status=0
+
+// -c 命令表示关闭了对应 data应用标准输出使用到的文件描述符
+bspserver@ubuntu:~/workspace/posix_threads/bin$ ./posix_spawn -c date
+date: write error: Bad file descriptor
+PID of child: 8715
+Child status: exited, status=1
+
+bspserver@ubuntu:~/workspace/posix_threads/bin$ ./posix_spawn -s sleep 60 &
+[1] 8720
+bspserver@ubuntu:~/workspace/posix_threads/bin$ PID of child: 8721
+bspserver@ubuntu:~/workspace/posix_threads/bin$ kill -KILL 8721
+bspserver@ubuntu:~/workspace/posix_threads/bin$ Child status: killed by signal 9
+[1]+  Done                    ./posix_spawn -s sleep 60
+
+```
+
+**fork()**, **fork()+exec()**, **posix_spawn()**创建的进程都是异步进程；
 
 
 
 参考文献：
 
-[**OS Core Components** - OS Images](http://www.qnx.com/developers/docs/7.0.0/index.html#com.qnx.doc.neutrino.building/topic/os_images/images_about.html)
+《[现代操作系统：原理与实现](https://download.csdn.net/download/v6543210/21349580?ops_request_misc=%7B%22request%5Fid%22%3A%22163910363516780265495730%22%2C%22scm%22%3A%2220140713.130102334.pc%5Fdownload.%22%7D&request_id=163910363516780265495730&biz_id=1&utm_medium=distribute.pc_search_result.none-task-download-2~download~first_rank_v2~times_rank-1-21349580.pc_v2_rank_dl_v1&utm_term=现代操作系统%3A原理与实现&spm=1018.2226.3001.4451.1)》机械工业出版社 作者是陈海波、夏虞斌 等著。
+
+[Programming with POSIX Threads](https://download.csdn.net/download/janesshang/10910991)
+
+
 

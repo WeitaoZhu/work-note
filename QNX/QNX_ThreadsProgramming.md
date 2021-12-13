@@ -53,7 +53,7 @@ int pthread_equal(pthread_t tl, pthread_t t2);  // 相等返回非0值
 ### 分离线程
 
 如果要创建一个从不需要控制的线程，可以是用属性（attribute）来建立线程以使它可分离的。如果不想等待创建的某个线程，而且知道不再需要控制它，可以使用 `pthread_detach` 函数来分离它。
-分离一个正在运行的线程不会对线程带来任何影响，仅仅是通知系统当该线程结束时，其所属资源可以被回收。
+分离一个正在运行的线程不会对线程带来任何影响，仅仅是通知系统当该线程结束时，其所属资源可以自动被回收。网络、多线程服务器常用。
 
 ```c
 int pthread_detach(pthread_t thread);
@@ -206,6 +206,159 @@ i = 9, status = CANCELED
 
 
 
+## `pthread_detach`与`pthread_join`用法与差异
+
+> * pthread有两种状态joinable状态和unjoinable状态，如果线程是joinable状态，当线程函数自己返回退出时或pthread_exit时都不会释放线程所占用堆栈和线程描述符（总计8K多）。只有当你调用了pthread_join之后这些资源才会被释放。若是unjoinable状态的线程，这些资源在线程函数退出时或pthread_exit时自动会被释放。
+> * unjoinable属性可以在pthread_create时指定，或在线程创建后在线程中pthread_detach自己, 如：pthread_detach(pthread_self())，将状态改为unjoinable状态，确保资源的释放。或者将线程置为 joinable,然后适时调用pthread_join.
+> * 其实简单的说就是在线程函数头加上 pthread_detach(pthread_self())的话，线程状态改变，在函数尾部直接 pthread_exit线程就会自动退出。省去了给线程擦屁股的麻烦。
+
+
+
+### pthread_join实例
+
+```C
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+ 
+void *thread_function(void *arg)
+{
+  int i;
+  for ( i=0; i<8; i++)
+ {
+    printf("Thread working...! %d \n",i);
+    sleep(1);
+  }
+  return NULL;
+}
+ 
+int main(void)
+{
+  pthread_t mythread;
+ 
+  if ( pthread_create( &mythread, NULL, thread_function, NULL) )
+ {
+    printf("error creating thread.");
+    abort();
+  }
+  if ( pthread_join ( mythread, NULL ) )
+ {
+    printf("error join thread.");
+    abort();
+  }
+ 
+  printf("thread done! \n");
+  exit(0);
+}
+```
+
+运行结果如下：
+
+```shell
+bspserver@ubuntu:~/workspace/bin$ ./thread_join 
+Thread working...! 0 
+Thread working...! 1 
+Thread working...! 2 
+Thread working...! 3 
+Thread working...! 4 
+Thread working...! 5 
+Thread working...! 6 
+Thread working...! 7 
+thread done! 
+```
+
+去掉pthread_join ( mythread, NULL )后再看运行结果如下：
+
+```shell
+bspserver@ubuntu:~/workspace/bin$ ./thread_join 
+thread done!
+```
+
+### pthread_detach实例
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <pthread.h>
+
+void *tfn(void *arg)
+{
+        pthread_t tid=pthread_self();
+        int n = 3;
+        //pthread_detach(pthread_self());
+        while (n--) {
+                printf("thread pid %lx  count %d\n", tid,n);
+                sleep(1);
+        }
+    pthread_exit((void *)1);
+}
+
+int main(void)
+{
+        pthread_t tid;
+        void *tret;
+        int err;
+
+#if 0
+
+        pthread_attr_t attr;            /*通过线程属性来设置游离态（分离态）*/
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        pthread_create(&tid, &attr, tfn, NULL);
+
+#else
+        pthread_create(&tid, NULL, tfn, NULL);
+        printf("child thread pid %lx\n",tid);
+        pthread_detach(tid);         //让线程分离  ----自动退出,无系统残留资源
+#endif
+
+        while (1) {
+                err = pthread_join(tid, &tret);
+                printf("-------------err= %d\n", err);
+                if (err != 0)
+                        fprintf(stderr, "thread_join error: %s\n", strerror(err));
+                else
+                        fprintf(stderr, "thread exit code %d\n", (int)tret);
+                sleep(1);
+        }
+        return 0;
+}
+```
+
+运行结果如下：
+
+```shell
+bspserver@ubuntu:~/workspace/bin$ ./thread_detach 
+child thread pid 7f3f85671700
+-------------err= 22
+thread_join error: Invalid argument
+thread pid 7f3f85671700  count 2
+thread pid 7f3f85671700  count 1
+-------------err= 22
+thread_join error: Invalid argument
+-------------err= 22
+thread_join error: Invalid argument
+thread pid 7f3f85671700  count 0
+-------------err= 22
+thread_join error: Invalid argument
+-------------err= 22
+thread_join error: Invalid argument
+-------------err= 22
+thread_join error: Invalid argument
+-------------err= 22
+```
+
+**分析：**
+
+>* 使用pthread_detach函数实现线程分离时，应当先创建线程（pthread_create），然后再用pthread_detach实现该线程的分离。因此，这种方式与修改线程属性来实现线程分离的方法相比，不会发生在线程创建函数还未来得及返回时子线程提前结束导致返回的线程号是错误的线程号的情况。因为采用这种方法，即使子线程提前结束（先于pthread_create返回），但是子线程还未处于分离状态，因此其PCB的残留信息依然存在，如线程号等一些系统资源，所以线程号等系统资源仍被占据，还未分配出去，所以创建函数返回的线程号依然是该线程的线程号；
+>* 不能对一个已经处于detach状态的线程调用pthread_join进行回收，会出现错误，且错误编号为22；
+>* 还可采用修改线程属性的方法来实现线程分离。
+
+
+
 ## 线程属性设置
 
 ### 线程属性
@@ -239,7 +392,7 @@ Posix线程中的线程属性pthread_attr_t主要包括分离属性、调度策�
 
 
 
-设置线程属性流程如下：
+#### 设置线程属性流程如下：
 
 ```C
 pthread_attr_t attr;
@@ -252,18 +405,20 @@ pthread_create (&tid, &attr, &func, &arg);
 
 ```C
 //– initializing, destroying
-pthread_attr_init(), 
-pthread_attr_destroy()
+int pthread_attr_init(pthread_attr_t *attr); 
+int pthread_attr_destroy(pthread_attr_t *attr);
 //– setting it up
-pthread_attr_setdetachstate(), 
-pthread_attr_setinheritsched(), 
-pthread_attr_setschedparam(), 
-pthread_attr_setschedpolicy(), 
-pthread_attr_setstackaddr(), 
-pthread_attr_setstacksize()
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
+int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
+int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
+int pthread_attr_setschedparam(pthread_attr_t *attr, const struct sched_param *param);
+int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
+int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
+int pthread_attr_setstackaddr(pthread_attr_t *attr, void *stackaddr);
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
 ```
 
-设置线程调度算法和优先级流程如下：
+#### 设置线程调度算法和优先级流程如下：
 
 ```C
 //– setting both:
@@ -283,7 +438,74 @@ pthread_attr_setschedpolicy (&attr, SCHED_NOCHANGE);
 pthread_create (NULL, &attr, func, arg);
 ```
 
-配置线程栈流程如下：
+涉及线程的继承、调度、参数实例如下：
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include <pthread.h>
+#include <sched.h>
+void *child_thread(void *arg)
+{
+	int policy = 0;
+	int max_priority = 0,min_priority = 0;
+	struct sched_param param;
+	pthread_attr_t attr;
+ 
+	pthread_attr_init(&attr);
+	pthread_attr_setinheritsched(&attr,PTHREAD_EXPLICIT_SCHED);
+	pthread_attr_getinheritsched(&attr,&policy);
+	if(policy == PTHREAD_EXPLICIT_SCHED){
+		printf("Inheritsched:PTHREAD_EXPLICIT_SCHED\n");
+	}
+	if(policy == PTHREAD_INHERIT_SCHED){
+		printf("Inheritsched:PTHREAD_INHERIT_SCHED\n");
+	}
+ 
+	pthread_attr_setschedpolicy(&attr,SCHED_RR);
+	pthread_attr_getschedpolicy(&attr,&policy);
+	if(policy == SCHED_FIFO){
+		printf("Schedpolicy:SCHED_FIFO\n");
+	}
+	if(policy == SCHED_RR){
+		printf("Schedpolicy:SCHED_RR\n");
+	}
+	if(policy == SCHED_OTHER){
+		printf("Schedpolicy:SCHED_OTHER\n");
+	}
+	max_priority = sched_get_priority_max(policy);
+	min_priority = sched_get_priority_min(policy);
+	printf("Maxpriority:%u\n",max_priority);
+	printf("Minpriority:%u\n",min_priority);
+ 
+	param.sched_priority = max_priority;
+	pthread_attr_setschedparam(&attr,&param);
+	printf("sched_priority:%u\n",param.sched_priority);
+	pthread_attr_destroy(&attr);
+}
+ 
+int main(int argc,char *argv[ ])
+{
+	pthread_t child_thread_id;
+	pthread_create(&child_thread_id,NULL,child_thread,NULL);
+	pthread_join(child_thread_id,NULL);
+ 
+	return 0;
+}
+```
+
+运行结果如下：
+
+```shell
+bspserver@ubuntu:~/workspace/bin$ ./thread_attr_shced 
+Inheritsched:PTHREAD_EXPLICIT_SCHED
+Schedpolicy:SCHED_RR
+Maxpriority:99
+Minpriority:1
+sched_priority:99
+```
+
+#### 配置线程栈流程如下：
 
 ```C
 // – to set the maximum size:
@@ -306,13 +528,119 @@ addr = stack_ptr;
 PTHREAD_STACK_MIN + platform_required_amount_for_code;
 ```
 
+线程栈配置实例如下：
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/prctl.h>
+
+#define DBG_PRINT(fmt, args...) {printf("%s ", __FUNCTION__);printf(fmt,##args);}
+
+#define BUFFER_LEN 0x3000
+void *testThead1(void* arg)
+{
+    //设定线程名为zoobiTask1
+    prctl(PR_SET_NAME, "zoobiTask1");
+
+    char buffer[BUFFER_LEN];
+
+    DBG_PRINT("Start\n");
+    sleep(3);
+    DBG_PRINT("End\n");
+    exit(0);
+}
+
+#define THREAD_STACK_LEN 0x4000
+int main(int argc, const char* argv[])
+{
+    pthread_t thread1ID;
+    pthread_attr_t attr;
+
+    int ret = 0;
+    void *stackAddr = NULL;
+    //获取linux的页大小
+    int paseSize = getpagesize();
+
+    DBG_PRINT("The linux page size:0x%x\n", paseSize);
+
+    pthread_attr_init(&attr);
+    /**
+     * 申请内存，并且内存以页大小对齐，需要申请的内存大小必须是2的整数次幂;
+     * 经常用的malloc申请的内存只会默认使用8bytes或者16bytes对齐(依赖平台是32位还是64位);
+     */
+    ret = posix_memalign(&stackAddr, paseSize, THREAD_STACK_LEN);
+    if(0 != ret)
+    {
+        DBG_PRINT("posix_memalign failed, errno:%s\n", strerror(ret));
+        return -1;
+    }
+#if 1
+    /**
+     * 设定线程运行栈地址和大小，栈大小最小为16KB，并且栈地址以页面对齐;
+     */
+    ret = pthread_attr_setstack(&attr, stackAddr, THREAD_STACK_LEN);
+    if(0 != ret)
+    {
+        DBG_PRINT("pthread_attr_setstack failed, errno:%s\n", strerror(ret));
+        return -1;
+    }
+#endif
+    void *getstackaddr = NULL;
+    size_t getstackSize = 0;
+    pthread_attr_getstack(&attr, &getstackaddr, &getstackSize);
+    DBG_PRINT("getstackaddr:%p, getstackSize:0x%x\n", getstackaddr, getstackSize);
+
+    ret = pthread_create(&thread1ID, &attr, testThead1, NULL);
+    if(ret != 0)
+    {
+        DBG_PRINT("pthread_create failed! errno:%s\n", strerror(ret));
+        return -1;
+    }
+    pthread_detach(thread1ID);
+
+    sleep(5);
+    printf("thread done! \n");
+    return 0;
+}
+```
+
+运行结果如下：
+
+```shell
+bspserver@ubuntu:~/workspace/bin$ ./pthread_stack 
+main The linux page size:0x1000
+main getstackaddr:0x560499a25000, getstackSize:0x4000
+testThead1 Start
+testThead1 End
+```
+
+如果将BUFFER_LEN更改为0x4000，如下打印：
+
+```shell
+bspserver@ubuntu:~/workspace/bin$ ./pthread_stack 
+main The linux page size:0x1000
+main getstackaddr:0x55c4d2e40000, getstackSize:0x4000
+Segmentation fault (core dumped)
+```
+
+局部变量过大导致栈已经溢出出现`Segmentation fault (core dumped)`错误。
+
 
 
 参考文献：
 
-《[现代操作系统：原理与实现](https://download.csdn.net/download/v6543210/21349580?ops_request_misc=%7B%22request%5Fid%22%3A%22163910363516780265495730%22%2C%22scm%22%3A%2220140713.130102334.pc%5Fdownload.%22%7D&request_id=163910363516780265495730&biz_id=1&utm_medium=distribute.pc_search_result.none-task-download-2~download~first_rank_v2~times_rank-1-21349580.pc_v2_rank_dl_v1&utm_term=现代操作系统%3A原理与实现&spm=1018.2226.3001.4451.1)》机械工业出版社 作者是陈海波、夏虞斌 等著。
+[linux中pthread_join()与pthread_detach()详解](https://blog.csdn.net/weibo1230123/article/details/81410241)
+
+[设定线程运行栈:pthread_attr_setstack()](https://blog.csdn.net/zyj_zhouyongjun183/article/details/80261725)
 
 [Programming with POSIX Threads](https://download.csdn.net/download/janesshang/10910991)
 
-
+[pthread_attr_setstackaddr(3) - Linux manual page](https://man7.org/linux/man-pages/man3/pthread_attr_setstackaddr.3.html)
 

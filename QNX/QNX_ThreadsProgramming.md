@@ -8,7 +8,7 @@
 
 线程是程序中的一系列此类指令，可以独立于其他代码执行。
 
-![posix_threads](D:\mygit\work-notes\QNX\pic\posix_threads.png)
+![posix_threads](.\pic\posix_threads.png)
 
 上图概念性地显示了线程位于同一进程地址空间内，因此，进程的内存描述中存在的大部分信息可以跨线程共享。有些信息是无法复制的，例如堆栈（每个线程指向不同内存区域的堆栈指针）、寄存器和线程特定的数据。这一信息足以允许独立于程序的主线程和程序内的一个或多个其他线程来调度线程。
 
@@ -96,7 +96,7 @@ int pthread_join(pthread_t thread, void **value_ptr);
 
 下面是线程的状态转换图：
 
-![pipeline](D:\myBooks\QNX\POSIX标准文档\POSIX-threads-programming-tutorials-master\doc\images\lifecycle.png)
+![lifecycle](.\pic\lifecycle.png)
 
 下面程序展示了一个线程使用的完整生命周期实例：
 

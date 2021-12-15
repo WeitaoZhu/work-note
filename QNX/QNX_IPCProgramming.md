@@ -1,4 +1,4 @@
-# QNX®  Neutrino 进程间通信编程
+# QNX®  Neutrino 进程间通信编程之Message-passing/Pules
 
 ### 介绍
 
@@ -20,15 +20,365 @@ QNX Neutrino提供以下形式的IPC：
 
 设计人员可以根据带宽要求，排队需求，网络透明度等选择这些服务。权衡可能很复杂，但灵活性很实用。
 
+### **Message-passing**
+
+比较传统的IPC方式是基于主从式构架（client-server），并且是双向通信。
+
+![qnx_msg_normal](./pic/qnx_msg_normal.png)
+
+
+
+![qnx_msg_ipc](./pic/qnx_msg_ipc.png)
+
+再仔细来看的话，就是每一个process里面都有一个thread来负责通信。当一个线程在等待回信的时候，就会傻傻的等待，什么都不做了。直到收到回复信息。
+
+**客户端线程**
+
+![clientthread_states](.\pic\clientthread_states.PNG)
+
+> * 客户端线程调用`MsgSend()`后，如果服务器线程还没调用`MsgReceive()`，客户端线程状态则为`SEND blocked`，一旦服务器线程调用了`MsgReceive()`，客户端线程状态变为`REPLY blocked`，当服务器线程执行`MsgReply()`后，客户端线程状态就变成了`READY`；
+>
+> * 如果客户端线程调用`MsgSend()`后，而服务器线程正阻塞在`MsgReceive()`上， 则客户端线程状态直接跳过`SEND blocked`，直接变成`REPLY blocked`；
+>
+> * 当服务器线程失败、退出、或者消失了，客户端线程状态变成`READY`，此时`MsgSend()`会返回一个错误值。
+
+**服务器线程**
+
+![serverthread_status](.\pic\serverthread_status.PNG)
+
+>* 服务器线程调用`MsgReceive()`时，当没有线程给它发送消息，它的状态为`RECEIVE blocked`，当有线程发送时变为`READY`；
+>
+>* 服务器线程调用`MsgReceive()`时，当已经有其他线程给它发送过消息，`MsgReceive()`会立马返回，而不会阻塞；
+>
+>* 服务器线程调用`MsgReply()`时，不会阻塞；
+
+客户端线程和服务器线程在时间主线里显示如下：
+
+![qnx_msg_process](./pic/qnx_msg_process.png)
+
+下面列出两种场景**Receive before Send**和**Send before Receive**
+
+服务器线程MsgReceive发生在客户线程MsgSend之前
+
+![msg_receive_send](./pic/msg_receive_send.png)
+
+客户线程MsgSend发生在服务器线程MsgReceive之前
+
+![msg_send_receive](./pic/msg_send_receive.png)
+
+由上面两个场景看客户线程MsgSend和服务器线程MsgReceive直接影响Message-passing性能。
+
+
+
+Servers收到信息在通道上，Clients通过connection连接上channel，来发送信息。
+
+![msg_channel_connection](./pic/msg_channel_connection.png)
+
+一个进程可以有多个connections连接到另一个进程的channel上，是个多对一的关系。
+
+![msg_mutli_channel_connection](./pic/msg_mutli_channel_connection.png)
+
+**Message-passing编程流程如下**
+
+>– Server:
+>
+>• creates a channel (***ChannelCreate**()*)
+>
+>• waits for a message (***MsgReceive**()*)
+>
+>• performs processing
+>
+>• sends reply (***MsgReply**()*)
+>
+>• goes back for more -> waits for a message (***MsgReceive**()*)
+>
+>– Client:
+>
+>• attaches to channel (***ConnectAttach**()*)
+>
+>• sends message (***MsgSend**()*)
+>
+>• processes reply
+
+**函数原型**
+
+```C
+int ChannelCreate( unsigned flags );
+int ChannelDestroy( int chid );
+int name_open( const char * name, int flags );
+int name_close( int coid );
+
+int ConnectAttach( uint32_t nd, pid_t pid, int chid, unsigned index, int flags );
+int ConnectDetach( int coid );
+name_attach_t * name_attach( dispatch_t * dpp, const char * path, unsigned flags );
+int name_detach( name_attach_t * attach, unsigned flags );
+
+long MsgSend( int coid, const void* smsg, size_t sbytes, void* rmsg, size_t rbytes );
+int MsgReceive( int chid, void * msg, size_t bytes, struct _msg_info * info );
+int MsgReply( int rcvid, long status, const void* msg, size_t bytes );
+
+ssize_t MsgWrite( int rcvid, const void* msg, size_t size, size_t offset );
+ssize_t MsgRead( int rcvid,  void* msg, size_t bytes,  size_t offset );
+```
+
+详细命令使用请看以下命令链接：
+
+> [ChannelCreate()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/c/channelcreate.html)，[ChannelDestroy()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/c/channeldestroy.html)，[name_open()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_open.html)，[name_close()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_close.html)，[ConnectAttach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/c/connectattach.html)，[ConnectDetach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/c/connectdetach.html)，[name_attach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_attach.html)，[name_detach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_detach.html)，[MsgSend()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/m/msgsend.html)，[MsgReceive()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/m/msgreceive.html)，[MsgReply()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/m/msgreply.html)，[MsgWrite()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/m/msgwrite.html)，[MsgRead()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/m/msgread.html)。
+
+服务器端伪代码如下：
+
+```C
+#include <sys/neutrino.h>
+int chid; // channel ID
+main ()
+{
+	int rcvid; // receive ID
+	chid = ChannelCreate (0 /* or flags */);
+	/* create client thread */
+	...
+	while (1) {
+		rcvid = MsgReceive (chid, &recvmsg, rbytes, NULL);
+		// process message from client here...
+		MsgReply (rcvid, 0, &replymsg, rbytes);
+	} 
+}
+```
+
+客户端伪代码如下：
+
+```C
+#include <sys/neutrino.h>
+extern int chid;
+int coid; // connection id
+int status;
+client_thread() {
+	// create the connection, typically done only once
+	coid = ConnectAttach (0, 0, chid, _NTO_SIDE_CHANNEL, 0);
+	...
+	// at some point later we decide we want to send a message
+	status = MsgSend (coid, &sendmsg, sbytes, &replymsg, rbytes);
+}
+```
+
+Massage之间的**通信数据总是通过拷贝**，而不是指针的传递。
+
+![msg_data_copy](./pic/msg_data_copy.png)
+
+那么如何设计消息传递策略呢？
+
+>* 定义公共消息头消息类型结构体
+>* 所有消息都是同一个消息类型
+>* 具有匹配每个消息类型的结构
+>* 如果消息相关或它们使用共同的结构，请考虑使用消息类型和子类型
+>* 定义匹配的回复结构体。如果合适，避免不同类型服务器的消息类型重叠
+
+下面的消息传递策略伪代码帮助你理解：
+
+```C
+while(1) {
+		recvid = MsgReceive( chid, &msg, sizeof(msg), NULL );
+		switch( msg.hdr.type ) {
+			case MSG_TYPE_1:
+				handle_msg_type_1(rcvid, &msg);
+				break;
+		case MSG_TYPE_2:
+				… 
+	} 
+}
+```
+
+
+
+用**name_open**与**MsgSend**消息传递的客户端线程
+
+```C
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/dispatch.h>
+
+#define ATTACH_POINT "myname"
+
+/* We specify the header as being at least a pulse */
+typedef struct _pulse msg_header_t;
+
+/* Our real data comes after the header */
+typedef struct _my_data {
+    msg_header_t hdr;
+    int data;
+} my_data_t;
+
+/*** Client Side of the code ***/
+int client() 
+{
+    my_data_t msg;
+	int msg_reply;
+    int server_coid;
+
+    if ((server_coid = name_open(ATTACH_POINT, 0)) == -1) {
+		printf("client name open failed\n");
+        return EXIT_FAILURE;
+    }
+
+    /* We would have pre-defined data to stuff here */
+    msg.hdr.type = 0x00;
+    msg.hdr.subtype = 0x00;
+	msg.data = 1;
+
+    /* Do whatever work you wanted with server connection */
+    printf("client name open success, Client sending msg %d \n", msg.data);
+    if (MsgSend(server_coid, &msg, sizeof(msg), &msg_reply, sizeof(msg_reply)) == -1) {
+		printf("client send msg 1 error\n");    
+	}
+	
+    printf("client receive msg 1 reply: %d \n", msg_reply);
+	
+	msg.hdr.type = 0x00;
+    msg.hdr.subtype = 0x01;
+	msg.data = 2;
+	printf("client name open success, Client sending msg %d \n", msg.data);
+	if (MsgSend(server_coid, &msg, sizeof(msg), &msg_reply, sizeof(msg_reply)) == -1) {
+		printf("client send msg 2 error\n");    
+	}
+	
+    printf("client receive msg 2 reply: %d \n", msg_reply);
+	
+    /* Close the connection */
+    name_close(server_coid);
+    return EXIT_SUCCESS;
+}
+
+int main(int argc, char *argv[]) {
+	int ret;
+
+    if (argc < 2) {
+        printf("Usage %s -s | -c \n", argv[0]);
+        ret = EXIT_FAILURE;
+    }
+    else if (strcmp(argv[1], "-c") == 0) {
+        printf("Running client ... \n");
+        ret = client();
+    }
+	else {
+        printf("Usage %s -s | -c \n", argv[0]);
+        ret = EXIT_FAILURE;
+    }
+    return ret;
+}
+```
+
+用**name_attach**与**MsgReceive，MsgReply**实现消息传递的服务器线程
+
+```C
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/dispatch.h>
+
+#define ATTACH_POINT "myname"
+
+/* We specify the header as being at least a pulse */
+typedef struct _pulse msg_header_t;
+
+/* Our real data comes after the header */
+typedef struct _my_data {
+    msg_header_t hdr;
+    int data;
+} my_data_t;
+
+int msg_update_fail =3;
+int msg_update_success =4;
+
+/*** Server Side of the code ***/
+int server() {
+   name_attach_t *attach;
+   my_data_t msg;
+
+   
+   my_data_t msg_reply;
+   msg_reply.hdr.type = 0x00;
+   msg_reply.hdr.subtype = 0x00;
+   
+  // my_data_t msg_replaydata;
+   int rcvid;
+
+   /* Create a local name (/dev/name/local/...) */
+   if ((attach = name_attach(NULL, ATTACH_POINT, 0)) == NULL) {
+   		printf("server name_attach error\n");
+       return EXIT_FAILURE;
+   }
+   printf("server name_attach suceess,wait masg from client\n");
+
+   /* Do your MsgReceive's here now with the chid */
+   while (1) {
+       rcvid = MsgReceive(attach->chid, &msg, sizeof(msg), NULL);
+
+       if (rcvid == -1) {/* Error condition, exit */
+           break;
+       }
+       /* A message (presumable ours) received, handle */
+	   switch(msg.data){
+
+			case 1:
+				printf("Server receive msg data %d \n", msg.data);
+				MsgReply(rcvid, EOK, &msg_update_fail, sizeof(msg_update_fail));
+				//MsgReply(UpdateReceiveId, EOK, &msg_update_fail, 0);
+				break;
+			case 2:
+				printf("Server receive msg data %d \n", msg.data);		
+				MsgReply(rcvid, EOK, &msg_update_success, sizeof(msg_update_success));
+				break;
+			default:
+				break;
+	   }
+	   
+       MsgReply(rcvid, EOK, 0, 0);
+
+   }
+
+   /* Remove the name from the space */
+   name_detach(attach, 0);
+
+   return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv) {
+    int ret;
+
+    if (argc < 2) {
+        printf("Usage %s -s | -c \n", argv[0]);
+        ret = EXIT_FAILURE;
+    }
+    else if (strcmp(argv[1], "-s") == 0) {
+        printf("Running Server ... \n");
+        ret = server();
+    }
+	else {
+        printf("Usage %s -s | -c \n", argv[0]);
+        ret = EXIT_FAILURE;
+    }
+    return ret;
+}
+```
+
+
+
+**Pules**
+
+![qnx_msg_pules](./pic/qnx_msg_pules.png)
+
 
 
 
 
 参考文献：
 
-《[现代操作系统：原理与实现](https://download.csdn.net/download/v6543210/21349580?ops_request_misc=%7B%22request%5Fid%22%3A%22163910363516780265495730%22%2C%22scm%22%3A%2220140713.130102334.pc%5Fdownload.%22%7D&request_id=163910363516780265495730&biz_id=1&utm_medium=distribute.pc_search_result.none-task-download-2~download~first_rank_v2~times_rank-1-21349580.pc_v2_rank_dl_v1&utm_term=现代操作系统%3A原理与实现&spm=1018.2226.3001.4451.1)》机械工业出版社 作者是陈海波、夏虞斌 等著。
+
 
 [Programming with POSIX Threads](https://download.csdn.net/download/janesshang/10910991)
 
+[QNC IPC---msg send receive example](https://blog.csdn.net/yuewen2008/article/details/86375835)
 
-
+[QNX trying to send struct through MsgSend(), MsgReply() IPC message passing](https://stackoverflow.com/questions/66842159/qnx-trying-to-send-struct-through-msgsend-msgreply-ipc-message-passing)

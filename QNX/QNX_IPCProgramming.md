@@ -123,7 +123,34 @@ ssize_t MsgRead( int rcvid,  void* msg, size_t bytes,  size_t offset );
 
 详细命令使用请看以下命令链接：
 
-> [ChannelCreate()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/c/channelcreate.html)，[ChannelDestroy()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/c/channeldestroy.html)，[name_open()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_open.html)，[name_close()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_close.html)，[ConnectAttach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/c/connectattach.html)，[ConnectDetach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/c/connectdetach.html)，[name_attach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_attach.html)，[name_detach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_detach.html)，[MsgSend()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/m/msgsend.html)，[MsgReceive()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/m/msgreceive.html)，[MsgReply()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/m/msgreply.html)，[MsgWrite()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/m/msgwrite.html)，[MsgRead()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/m/msgread.html)。
+Message-passing API
+
+| Function                                                     | Description                                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [*ChannelCreate()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fc%2Fchannelcreate.html) | Create a channel to receive messages on.                     |
+|                                                              |                                                              |
+| [*ChannelDestroy()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fc%2Fchanneldestroy.html) | Destroy a channel.                                           |
+| [*ConnectAttach()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fc%2Fconnectattach.html) | Create a connection to send messages on.                     |
+| [*ConnectDetach()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fc%2Fconnectdetach.html) | Detach a connection.                                         |
+| [name_open()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_open.html) | Open a name to connect to a server                           |
+| [name_close()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_close.html) | Close a server connection that was opened by **name_open()** |
+| [name_attach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_attach.html) | Register a name in the pathname space and create a channel   |
+| [name_detach()](http://www.qnx.com/developers/docs/7.1/com.qnx.doc.neutrino.lib_ref/topic/n/name_detach.html) | Remove a name from the namespace and destroy the channel     |
+| [*MsgSend()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgsend.html) | Send a message and block until reply.                        |
+| [MsgSendv()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/m/msgsendv.html) | Send a message to a channel                                  |
+| [*MsgReceive()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgreceive.html) | Wait for a message.                                          |
+| [MsgReceivev()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/m/msgreceivev.html) | Wait for a message or pulse on a channel                     |
+| [*MsgReceivePulse()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgreceivepulse.html) | Wait for a tiny, nonblocking message (pulse).                |
+| [*MsgReply()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgreply.html) | Reply to a message.                                          |
+| [*MsgError()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgerror.html) | Reply only with an error status. No message bytes are transferred. |
+| [*MsgRead()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgread.html) | Read additional data from a received message.                |
+| [MsgReadv()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/m/msgreadv.html) | Read data from a message                                     |
+| [*MsgWrite()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgwrite.html) | Write additional data to a reply message.                    |
+| [MsgWritev()](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/m/msgwritev.html) | Write a reply message                                        |
+| [*MsgInfo()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsginfo.html) | Obtain info on a received message.                           |
+| [*MsgSendPulse()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgsendpulse.html) | Send a tiny, nonblocking message (pulse).                    |
+| [*MsgDeliverEvent()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgdeliverevent.html) | Deliver an event to a client.                                |
+| [*MsgKeyData()*](https://www.oschina.net/action/GoToLink?url=http%3A%2F%2Fwww.qnx.com%2Fdevelopers%2Fdocs%2F7.1%2Fcom.qnx.doc.neutrino.lib_ref%2Ftopic%2Fm%2Fmsgkeydata.html) | Key a message to allow security checks.                      |
 
 服务器端伪代码如下：
 
@@ -363,13 +390,92 @@ int main(int argc, char **argv) {
 }
 ```
 
+**如果您想在一条消息中发送以下三个缓冲区怎么办？**
+
+你可能通过三次`memcpy()`处理一个大的buffer。但是有个更有效的方法通过`MsgSendv()`传递指针数组。
+
+使用**函数原型**如下：
+
+```c
+long MsgSendv( int coid,  const iov_t* siov, size_t sparts,  const iov_t* riov, size_t rparts );
+int MsgReceivev( int chid, const iov_t * riov, size_t rparts, struct _msg_info * info );
+ssize_t MsgReadv( int rcvid, const iov_t* riov, size_t rparts, size_t offset );
+void SETIOV( iov_t *msg, void *addr, size_t len );
+```
+
+```C
+typedef struct {
+    void *iov_base;
+    size_t iov_len;
+} iov_t;
+
+iov_t iovs [3];
+```
+
+![msg_setiov](./pic/msg_setiov.png)
+
+实际IOVs应用实例，客户端需要将一个12KBytes的文件传给服务器端。
+
+客户端伪代码如下：
+
+```C
+write (fd, buf, size);
+effectively does:
+	hdr.nbytes = size;
+	SETIOV (&siov[0], &header, sizeof (header));
+	SETIOV (&siov[1], buf, size);
+	MsgSendv (fd, siov, 2, NULL, 0);
+```
+
+<img src="./pic/msg_data_buffer.png" alt="msg_data_buffer" style="zoom:80%;" />
+
+实际上获得的是连续的字节流。
+
+<img src="./pic/msg_data_getsent.png" alt="msg_data_getsent" style="zoom:80%;" />
+
+服务器端获得接收内容是什么？
+
+```C
+// assume riov has been setup
+MsgReceivev (chid, riov, 4, NULL);
+```
+
+<img src="./pic/msg_data_serverget.png" alt="msg_data_serverget" style="zoom:80%;" />
+
+实际上我们是不知道接收的数据是多少，直到我们看见数据流的头。
+
+```C
+rcvid = MsgReceive (chid, &header,sizeof (header), NULL);
+//获取到数据流的头信息后
+SETIOV (iov [0], &cbuf [6], 4096);
+SETIOV (iov [1], &cbuf [2], 4096);
+SETIOV (iov [2], &cbuf [5], 4096);
+//用MsgReadv直接根据sizeof(header)偏移把剩下的数据获取出来。
+MsgReadv (rcvid, iov, 3, sizeof(header));
+```
+
+![msg_data_serverreadv](./pic/msg_data_serverreadv.png)
+
+整个消息传递从客户端到服务器，你可以理解为下面两个流程：
+
+![msg_ctos_iovs.png](./pic/msg_ctos_iovs.png)
 
 
-**Pules**
 
-![qnx_msg_pules](./pic/qnx_msg_pules.png)
+![msg_stoc_iovs.png](./pic/msg_stoc_iovs.png)
 
 
+
+**那怎么理解从服务器端拷贝数据给客户端呢？**
+
+```C
+ssize_t MsgWrite( int rcvid, const void* msg, size_t size, size_t offset );
+ssize_t MsgWritev( int rcvid, const iov_t* iov, size_t parts, size_t offset );
+```
+
+MsgWrite回传数据实例如下：
+
+![msg_stoc_writev.png](./pic/msg_stoc_writev.png)
 
 
 

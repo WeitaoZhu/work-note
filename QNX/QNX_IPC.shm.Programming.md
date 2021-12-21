@@ -39,6 +39,8 @@ QNX中消息传递通过拷贝完成，当消息较大时，可以通过共享�
 
 <img src="./pic/ipc_shared_memory1.png" alt="ipc_shared_memory" style="zoom:100%;" />
 
+![mmap](.\pic\ipc_shm_mmap.jpg)
+
 共享内存建立流程：
 
 ```C
@@ -513,3 +515,4 @@ bspserver@ubuntu:~/workspace/posix_share_memory$cat /tmp/example.log
 
 [Programming with POSIX Threads](https://download.csdn.net/download/janesshang/10910991)
 
+[**System Architecture** - Interprocess Communication (IPC)](http://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.sys_arch/topic/ipc.html)

@@ -23,8 +23,6 @@
 > buildroot版本: 2022.02.5
 >
 > busybox版本: 1.32.1
->
-> NFS Server: 
 
 
 
@@ -312,15 +310,28 @@ qemu-system-aarch64 \
 ```shell
 cd ~/workspace/rootfs
 wget https://github.com/mirror/busybox/archive/refs/tags/1_32_1.tar.gz
-wget https://busybox.net/downloads/busybox-1.32.0.tar.bz2
 tar xzf 1_32_1.tar.gz
 cd busybox-1_32_1
+make menuconfig
+```
 
+选择busybox选项如下:
 
+```shell
+ Settings  --->
+     --- Build Options
+     [*] Build static binary (no shared libs)
+```
 
+运行`make`, 指定安装在指定的`../nft`目录下
+
+```shell
+make CONFIG_PREFIX=../initramfs install
 ```
 
 
+
+[Linux kernel + busybox自制arm64架构Linux系统 (daimajiaoliu.com)](https://www.daimajiaoliu.com/daima/6cb7749b40f6c06)
 
 
 

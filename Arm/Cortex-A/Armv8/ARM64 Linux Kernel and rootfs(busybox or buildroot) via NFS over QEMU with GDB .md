@@ -329,9 +329,72 @@ make menuconfig
 make CONFIG_PREFIX=../initramfs install
 ```
 
+基于busybox的文件系统启动流程：
+
+```shell
+# /sbin/init => /etc/inittab => /etc/init.d/rdS => /etc/fstab ...
+cd ~/workspace/rootfs/busybox-1_32_1
+cd ../initramfs
+mkdir -p dev etc home lib mnt proc root sys tmp var
+
+vim etc/inittab
+::sysinit:/etc/init.d/rcS
+::respawn:-/bin/sh
+::askfirst:-/bin/sh
+::cttlaltdel:/bin/umount -a -r
+
+chmod 755 etc/inittab
+
+mkdir -p etc/init.d/
+vim etc/init.d/rcS
+
+echo "----------mount all in fstab----------------"
+/bin/mount -a #读取/etc/fstab，加载文件系统
+mkdir -p /dev/pts
+mount -t devpts devpts /dev/pts
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+/sbin/mdev -s
+echo "****************Hello World********************"
+echo "Kernel Version:linux-5.10.111"
+echo "***********************************************"
+
+chmod 755 etc/init.d/rcS
+
+vim etc/fstab
+
+#device mount-point type option dump fsck
+proc  /proc proc  defaults 0 0
+temps /tmp  rpoc  defaults 0 0
+none  /tmp  ramfs defaults 0 0
+sysfs /sys  sysfs defaults 0 0
+mdev  /dev  ramfs defaults 0 0
+
+cd dev
+mknod console c 5 1
+mknod null c 1 3
+```
 
 
-[Linux kernel + busybox自制arm64架构Linux系统 (daimajiaoliu.com)](https://www.daimajiaoliu.com/daima/6cb7749b40f6c06)
 
+制作根文件系统镜像文件rootfs.cpio与rootfs.cpio.gz
 
+```shell
+cd ~/workspace/rootfs/initramfs
+find . | cpio -o -H newc > ../rootfs.cpio
+gzip -c ../rootfs.cpio > ../rootfs.cpio.gz
+```
+
+虚拟机启动 rootfs.cpio：
+
+```shekk
+qemu-system-aarch64 \
+  -machine virt \
+  -cpu cortex-a53 \
+  -nographic -smp 1 \
+  -kernel ~/workspace/linux-5.10.111/build/arch/arm64/boot/Image \
+  -initrd ~/workspace/rootfs/rootfs.cpio \
+  -append "rdinit=/linuxrc console=ttyAMA0" \
+  -m 1024 \
+  -gdb tcp::1235
+```
 

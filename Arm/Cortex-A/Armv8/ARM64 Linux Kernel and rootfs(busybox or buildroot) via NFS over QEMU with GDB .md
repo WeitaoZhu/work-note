@@ -176,21 +176,21 @@ make menuconfig -C ~/workspace/linux-5.10.111 O=~/workspace/linux-5.10.111/build
 
 选择`CONFIG_KCOV`
 
-<img src="D:\MSNTEC_20211121\work-notes\Arm\Cortex-A\Armv8\pic\config_kcov.jpg" alt="config_kcov" style="zoom:70%;" />
+<img src=".\pic\config_kcov.jpg" alt="config_kcov" style="zoom:70%;" />
 
-<img src="D:\MSNTEC_20211121\work-notes\Arm\Cortex-A\Armv8\pic\config_kcov_0.jpg" alt="config_kcov_0" style="zoom:70%;" />
+<img src=".\pic\config_kcov_0.jpg" alt="config_kcov_0" style="zoom:70%;" />
 
 选择`CONFIG_DEBUG_INFO`
 
-<img src="D:\MSNTEC_20211121\work-notes\Arm\Cortex-A\Armv8\pic\config_debug_info.jpg" alt="config_debug_info" style="zoom:70%;" />
+<img src=".\pic\config_debug_info.jpg" alt="config_debug_info" style="zoom:70%;" />
 
 选择`CONFIG_DEBUG_FS`
 
-<img src="D:\MSNTEC_20211121\work-notes\Arm\Cortex-A\Armv8\pic\config_debug_fs.jpg" alt="config_debug_fs" style="zoom:70%;" />
+<img src=".\pic\config_debug_fs.jpg" alt="config_debug_fs" style="zoom:70%;" />
 
 选择`CONFIG_NET_9P` and `CONFIG_NET_9P_VIRTIO` 
 
-<img src="D:\MSNTEC_20211121\work-notes\Arm\Cortex-A\Armv8\pic\net_9p.jpg" alt="net_9p" style="zoom:67%;" />
+<img src=".\pic\net_9p.jpg" alt="net_9p" style="zoom:67%;" />
 
 保存退出。
 
@@ -374,8 +374,6 @@ mknod console c 5 1
 mknod null c 1 3
 ```
 
-
-
 制作根文件系统镜像文件rootfs.cpio与rootfs.cpio.gz
 
 ```shell
@@ -395,6 +393,68 @@ qemu-system-aarch64 \
   -initrd ~/workspace/rootfs/rootfs.cpio \
   -append "rdinit=/linuxrc console=ttyAMA0" \
   -m 1024 \
-  -gdb tcp::1235
+  -gdb tcp::1235 -S
+```
+
+GDB调试
+
+停下來等待gdb連接 在另外終端執行如下命令：
+
+```shell
+cd ~/workspace/linux-5.10.111/build/
+aarch64-linux-gnu-gdb vmlinux
+
+GNU gdb (Linaro_GDB-2019.12) 8.3.1.20191204-git
+Copyright (C) 2019 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "--host=x86_64-unknown-linux-gnu --target=aarch64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from vmlinux...
+(gdb) target remote localhost:1235
+Remote debugging using localhost:1235
+0x0000000040000000 in ?? ()
+(gdb) set disassemble-next-line on
+(gdb) l
+1       /* SPDX-License-Identifier: GPL-2.0-only */
+2       /*
+3        * Low-level CPU initialisation
+4        * Based on arch/arm/kernel/head.S
+5        *
+6        * Copyright (C) 1994-2002 Russell King
+7        * Copyright (C) 2003-2012 ARM Ltd.
+8        * Authors:     Catalin Marinas <catalin.marinas@arm.com>
+9        *              Will Deacon <will.deacon@arm.com>
+10       */
+(gdb) b start_kernel
+Breakpoint 1 at 0xffff8000103a0a40: file ../init/main.c, line 854.
+(gdb) b setup_arch
+Breakpoint 2 at 0xffff8000103a384c: file ../arch/arm64/kernel/setup.c, line 287.
+(gdb) b mm_init
+Breakpoint 3 at 0xffff800010017458: mm_init. (2 locations)
+(gdb) b paging_init
+Breakpoint 4 at 0xffff8000103a5d68: file ../arch/arm64/mm/mmu.c, line 752.
+(gdb) info b
+Num     Type           Disp Enb Address            What
+1       breakpoint     keep y   0xffff8000103a0a40 in start_kernel at ../init/main.c:854
+2       breakpoint     keep y   0xffff8000103a384c in setup_arch at ../arch/arm64/kernel/setup.c:287
+3       breakpoint     keep y   <MULTIPLE>
+3.1                         y   0xffff800010017458 in mm_init at ../kernel/fork.c:1018
+3.2                         y   0xffff8000103a0c5c in mm_init at ../arch/arm64/include/asm/jump_label.h:21
+4       breakpoint     keep y   0xffff8000103a5d68 in paging_init at ../arch/arm64/mm/mmu.c:752
+(gdb) c
+Continuing.
+
+Thread 1 hit Breakpoint 1, start_kernel () at ../init/main.c:854
+854             set_task_stack_end_magic(&init_task);
 ```
 

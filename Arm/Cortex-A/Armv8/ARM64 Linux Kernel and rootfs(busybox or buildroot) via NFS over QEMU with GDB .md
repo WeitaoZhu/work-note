@@ -458,3 +458,15 @@ Thread 1 hit Breakpoint 1, start_kernel () at ../init/main.c:854
 854             set_task_stack_end_magic(&init_task);
 ```
 
+
+
+```shell
+qemu-system-aarch64 \
+  -machine virt \
+  -cpu cortex-a53 \
+  -nographic -smp 1 \
+  -kernel ~/workspace/linux-5.10.111/build/arch/arm64/boot/Image \
+  --append "console=ttyAMA0 loglevel=1 ignore_loglevel earlycon=pl011,mmio32,0x9000000 root=/dev/nfs nfsroot=10.0.2.2:/home/weston/workspace/rootfs/buildroot-2022.02.5/output/target,proto=tcp,nfsvers=4,nolock rw ip=dhcp init=/linuxrc" \
+  -m 1024
+```
+

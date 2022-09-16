@@ -470,3 +470,29 @@ qemu-system-aarch64 \
   -m 1024
 ```
 
+
+
+Linux内核支持GDB调试配置
+
+```shell
+Kernel hacking  --->
+    Compile-time checks and compiler options  --->
+    [*] Compile the kernel with debug info
+    [ ]   Reduce debugging information 
+    [*]   Provide GDB scripts for kernel debugging
+    -*- Compile the kernel with frame pointers
+    CONFIG_DEBUG_INFO=y
+    CONFIG_DEBUG_INFO_REDUCED=n
+    CONFIG_GDB_SCRIPTS=y
+    CONFIG_FRAME_POINTER=y
+
+    Generic Kernel Debugging Instruments  --->
+    [*] KGDB: kernel debugger  ---> 
+    CONFIG_KGDB=y
+
+    Kernel Features  --->
+    [ ] Randomize the address of the kernel image
+    CONFIG_RANDOMIZE_BASE=n
+
+```
+

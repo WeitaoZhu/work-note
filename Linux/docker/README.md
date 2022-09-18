@@ -282,3 +282,16 @@ For more examples and ideas, visit:
 
 ```
 
+
+
+```shell
+docker load < weston-ubuntu1804-bionic-dokcer-20220202.tar
+
+docker images
+
+docker tag 6cee39171947 weston-ubuntu1804:latest
+
+
+
+```
+

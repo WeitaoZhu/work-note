@@ -282,16 +282,135 @@ For more examples and ideas, visit:
 
 ```
 
+## Docker images导入导出
 
+### Docker 镜像操作与容器操作
+
+#### 镜像操作
+
+**列出镜像：**
 
 ```shell
-docker load < weston-ubuntu1804-bionic-dokcer-20220202.tar
-
-docker images
-
-docker tag 6cee39171947 weston-ubuntu1804:latest
-
-
-
+$ docker images
+REPOSITORY          TAG       IMAGE ID       CREATED        SIZE
+weston-ubuntu1804   latest    6cee39171947   7 weeks ago    5.33GB
+bionic              latest    ad080923604a   3 months ago   63.1MB
 ```
 
+**镜像保存**
+
+```shell
+REPOSITORY          TAG       IMAGE ID       CREATED        SIZE
+weston-ubuntu1804   latest    6cee39171947   7 weeks ago    5.33GB
+bionic              latest    ad080923604a   3 months ago   63.1MB
+
+$ docker save -o weston-ubuntu1804-bionic.tar weston-ubuntu1804
+```
+
+**镜像导入**
+
+```shell
+$ docker load < weston-ubuntu1804-bionic.tar
+
+REPOSITORY          TAG       IMAGE ID       CREATED        SIZE
+<none>              <none>    6cee39171947   7 weeks ago    5.33GB
+<none>              <none>    ad080923604a   3 months ago   63.1MB
+
+$ docker tag 6cee39171947 weston-ubuntu1804:latest
+$ docker tag ad080923604a bionic:latest
+
+$ docker images
+REPOSITORY          TAG       IMAGE ID       CREATED        SIZE
+weston-ubuntu1804   latest    6cee39171947   7 weeks ago    5.33GB
+bionic              latest    ad080923604a   3 months ago   63.1MB
+```
+
+#### 容器操作
+
+本人编写的运行某个ubuntu版本的docker镜像脚本。
+
+```shell
+#!/bin/bash
+
+CURDIR=$(pwd)
+IMAGE_NAME="$USER""-ubuntu1804"
+TIMESTAMP=$(date +%d%m%Y-%H%M%S)
+CONTAINER_NAME="$USER-$TIMESTAMP"
+DOCKERFILE="ubuntu1804"
+IMAGE_IS_BUILT=$(docker images | grep $IMAGE_NAME)
+RESULT=0
+
+if [ -z "$1" ]
+  then
+    echo "no docker file specified, using default values" 
+else
+    DOCKERFILE=$1
+    IMAGE_NAME="$USER"-"$DOCKERFILE"
+fi
+
+# docker allows only lower case, so translate it
+IMAGE_NAME=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+
+DIRECTORY=$(cd `dirname $0` && pwd)
+DIRECTORY=$(cd `dirname $DIRECTORY` && pwd)
+
+VOLUME_MOUNT="";
+if [ "$DIRECTORY" == "$HOME" ]; then
+ echo "execution in home directory"
+else
+ echo "execution outside home directory"
+ VOLUME_MOUNT="-v $CURDIR/..:$CURDIR/.."
+fi
+
+echo "Running docker $IMAGE_NAME image"
+docker run --rm \
+		-it \
+		-e HOME -v $HOME:$HOME \
+		-e USER \
+		-u $(id -u):$(id -g) \
+		$(id -Gz | xargs -0 -n1 -I{} echo "--group-add={}") \
+		-v /etc/passwd:/etc/passwd:ro \
+		-e SSH_AUTH_SOCK \
+		--privileged \
+		--net="host" \
+		-h docker-$IMAGE_NAME-$HOSTNAME \
+		$VOLUME_MOUNT \
+		--volume="$HOME/.Xauthority:/root/.Xauthority:rw" \
+		--volume="/media:/media" \
+		--env="DISPLAY" \
+		--name=$CONTAINER_NAME \
+		-w $CURDIR/.. \
+		$IMAGE_NAME
+```
+
+**查看容器列表**
+
+```
+#查看已启动的容器``sudo` `docker ` `ps` `#查看所有容器``sudo` `docker ` `ps` `-a　　
+```
+
+**启动一个已存在的容器**　　
+
+```
+#后面的id为容器ID<br>sudo docker start 8d98fd43acd4
+```
+
+**进入容器**　　
+
+```
+sudo` `docker attach 8d98fd43acd4
+```
+
+**停止容器**
+
+```
+sudo` `docker stop 8d98fd43acd4
+```
+
+**删除容器**
+
+容器必须是停止状态的才可以删除
+
+```
+sudo` `docker ` `rm` `8d98fd43acd4
+```

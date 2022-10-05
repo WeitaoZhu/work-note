@@ -460,17 +460,73 @@ Thread 1 hit Breakpoint 1, start_kernel () at ../init/main.c:854
 
 
 
+### NFS根文件系统制作
+
+#### Linux主机安装并配置NFS服务
+
+```shell
+sudo apt install -y nfs-kernel-server bridge-utils
+```
+
+#### 配置NFS
+
+```shell
+sudo vim /etc/exports
+// 添加NFS共享目录
+/home/weston/workspace/rootfs/buildroot-2022.02.5/output/target  127.0.0.1(rw,sync,no_subtree_check,all_squash,insecure,anonuid=1000,anongid=1000)
+    rw    				可读可写操作
+    sync    			内存和磁盘上的内容保持同步
+    no_subtree_check    不检查根文件系统子目录文件
+```
+
+#### 重启NFS服务
+
+```shell
+sudo /etc/init.d/rpcbind restart
+sudo /etc/init.d/nfs-kernel-server restart
+
+或者
+
+sudo systemctl restart nfs-kernel-server
+```
+
+#### 检查NFS共享目录是否创建
+
+```shell
+# sudo showmount -e
+Export list for VirtualBox:
+/home/weston/workspace/rootfs/buildroot-2022.02.5/output/target *
+```
+
+**在内核配置编译时需要Linux内核对nfs文件系统的支持**
+
+```shell
+File systems  --->
+	--- Network File Systems
+	<*>   NFS client support
+	<*>     NFS client support for NFS version 2
+	<*>     NFS client support for NFS version 3
+	<*>     NFS client support for NFS version 4
+	[*]     NFS client support for NFSv4.1
+	[*]     NFS client support for NFSv4.2
+	(kernel.org) NFSv4.1 Implementation ID Domain
+	[*]     NFSv4.1 client support for migration
+	[*]     Root file system on NFS 
+	[*]     NFS: Disable NFS UDP protocol support 
+	<*>     Plan 9 Resource Sharing Support (9P2000)
+```
+
+虚拟机启动NFS根文件系统：
+
 ```shell
 qemu-system-aarch64 \
   -machine virt \
   -cpu cortex-a53 \
   -nographic -smp 1 \
   -kernel ~/workspace/linux-5.10.111/build/arch/arm64/boot/Image \
-  --append "console=ttyAMA0 loglevel=1 ignore_loglevel earlycon=pl011,mmio32,0x9000000 root=/dev/nfs nfsroot=10.0.2.2:/home/weston/workspace/rootfs/buildroot-2022.02.5/output/target,proto=tcp,nfsvers=4,nolock rw ip=dhcp init=/linuxrc" \
+  --append "console=ttyAMA0 loglevel=1 ignore_loglevel earlycon=pl011,mmio32,0x9000000 root=/dev/nfs nfsroot=10.0.2.2:/home/weston/workspace/rootfs/buildroot-2022.02.5/output/target,proto=tcp,nfsvers=3,nolock rw ip=dhcp init=/linuxrc" \
   -m 1024
 ```
-
-
 
 Linux内核支持GDB调试配置
 

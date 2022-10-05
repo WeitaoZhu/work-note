@@ -337,8 +337,6 @@ IMAGE_NAME="$USER""-ubuntu1804"
 TIMESTAMP=$(date +%d%m%Y-%H%M%S)
 CONTAINER_NAME="$USER-$TIMESTAMP"
 DOCKERFILE="ubuntu1804"
-IMAGE_IS_BUILT=$(docker images | grep $IMAGE_NAME)
-RESULT=0
 
 if [ -z "$1" ]
   then
@@ -350,6 +348,8 @@ fi
 
 # docker allows only lower case, so translate it
 IMAGE_NAME=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+
+echo run "$IMAGE_NAME"
 
 DIRECTORY=$(cd `dirname $0` && pwd)
 DIRECTORY=$(cd `dirname $DIRECTORY` && pwd)
@@ -381,6 +381,7 @@ docker run --rm \
 		--name=$CONTAINER_NAME \
 		-w $CURDIR/.. \
 		$IMAGE_NAME
+
 ```
 
 **查看容器列表**

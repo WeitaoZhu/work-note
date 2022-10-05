@@ -525,10 +525,57 @@ qemu-system-aarch64 \
   -nographic -smp 1 \
   -kernel ~/workspace/linux-5.10.111/build/arch/arm64/boot/Image \
   --append "console=ttyAMA0 loglevel=1 ignore_loglevel earlycon=pl011,mmio32,0x9000000 root=/dev/nfs nfsroot=10.0.2.2:/home/weston/workspace/rootfs/buildroot-2022.02.5/output/target,proto=tcp,nfsvers=3,nolock rw ip=dhcp init=/linuxrc" \
-  -m 1024
+  -m 1024 \
+  -gdb tcp::1235 -S
 ```
 
-Linux内核支持GDB调试配置
+虚拟机启动log
+
+```shell
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd034]
+[    0.000000] Linux version 5.10.111-ge10035969155 (weston@home) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the Arm Architecture 11.2-2022.02 (arm-11.14)) 11.2.1 20220111, GNU ld (GNU Toolchain for the Arm Architecture 11.2-2022.02 (arm-11.14)) 2.37.20220122) #2 SMP PREEMPT Wed Oct 5 14:06:53 CST 2022
+[    0.000000] Machine model: linux,dummy-virt
+[    0.000000] printk: debug: ignoring loglevel setting.
+[    0.000000] earlycon: pl11 at MMIO32 0x0000000009000000 (options '')
+......
+......
+[    2.313194] Sending DHCP requests ., OK
+[    2.343744] IP-Config: Got DHCP answer from 10.0.2.2, my address is 10.0.2.15
+[    2.344280] IP-Config: Complete:
+[    2.344881]      device=eth0, hwaddr=52:54:00:12:34:56, ipaddr=10.0.2.15, mask=255.255.255.0, gw=10.0.2.2
+[    2.345815]      host=10.0.2.15, domain=, nis-domain=(none)
+[    2.346246]      bootserver=10.0.2.2, rootserver=10.0.2.2, rootpath=
+[    2.346373]      nameserver0=10.0.2.3
+[    2.366480] ALSA device list:
+[    2.366897]   No soundcards found.
+[    2.375080] uart-pl011 9000000.pl011: no DMA platform data
+[    2.554622] VFS: Mounted root (nfs filesystem) on device 0:20.
+[    2.563829] devtmpfs: mounted
+[    2.635101] Freeing unused kernel memory: 2240K
+[    2.638595] Run /linuxrc as init process
+[    2.639031]   with arguments:
+[    2.639531]     /linuxrc
+[    2.639983]   with environment:
+[    2.640449]     HOME=/
+[    2.640782]     TERM=linux
+[    3.012920] random: fast init done
+......
+......
+eth0: IAID 00:12:34:56
+eth0: rebinding lease of 10.0.2.15
+eth0: leased 10.0.2.15 for 86400 seconds
+eth0: adding route to 10.0.2.0/24
+eth0: adding default route via 10.0.2.2
+forked to background, child pid 160
+Starting sshd: Privilege separation user sshd does not exist
+OK
+Welcome to Buildroot
+buildroot login: 
+```
+
+
+
+Linux内核在线GDB调试配置
 
 ```shell
 Kernel hacking  --->

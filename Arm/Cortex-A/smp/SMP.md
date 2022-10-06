@@ -524,7 +524,17 @@ start_kernel
 
 可以看到这里将从处理器编号写到了secondary_holding_pen_release中，然后唤醒从处理器，从处理器再次欢快的执行，最后执行到secondary_startup，来做从处理器的初始化工作（如设置ｍｍｕ，异常向量表等），最终从处理器还是处于wfi状态，但是这个时候从处理器已经具备了执行进程的能力，可以用来调度进程，触发中断等，和主处理器有着相同的地位。
 
+咱们总结概述一下spin-table方式的多核启动流程：
 
+1. 从处理器的第一个关卡U-Boot程序中的函数spin_table_secondary_jump，从处理器睡眠等待，被唤醒后，检查全局变量spin_table_cpu_release_addr的值是不是0，如果是0，继续等待睡眠。引导处理器将会把全局变量spin_table_cpu_release_addr的值设置为一个函数的地址。
+
+2. U-Boot程序：引导处理器执行函数boot_prep_linux，为执行内核做准备工作，其中一项准备工作是调用函数spin_table_update_dt，修改FDT设备树二进制文件。
+
+   a. 为每个处理器的“cpu”节点插入一个属性“cpu-release-addr”，把属性值设置为全局变量spin_table_cpu_release_addr的地址，称为处理器放行地址。
+
+   b. 在内存保留区（memory reserve map，对应FDT设备树源文件的字段“/memreserve/”）添加全局变量spin_table_cpu_release_addr的地址。
+
+3. 
 
 参考资料
 

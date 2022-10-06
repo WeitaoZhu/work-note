@@ -1,4 +1,4 @@
-# ARM64 的多核启动流程分析 spin-table
+# ARM64 的多核spin-table方式启动流程分析 
 
 版本和环境信息如下：
 
@@ -522,7 +522,7 @@ start_kernel
 
 
 
-可以看到这里将从处理器编号写到了secondary_holding_pen_release中，然后唤醒从处理器，从处理器再次欢快的执行，最后执行到secondary_startup，来做从处理器的初始化工作（如设置ｍｍｕ，异常向量表等），最终从处理器还是处于wfi状态，但是这个时候从处理器已经具备了执行进程的能力，可以用来调度进程，触发中断等，和主处理器有着相同的地位。
+可以看到这里将从处理器编号写到了secondary_holding_pen_release中，然后唤醒从处理器，从处理器再次欢快的执行，最后执行到secondary_startup，来做从处理器的初始化工作（如设置mmu，异常向量表等），最终从处理器还是处于wfi状态，但是这个时候从处理器已经具备了执行进程的能力，可以用来调度进程，触发中断等，和主处理器有着相同的地位。
 
 咱们总结概述一下spin-table方式的多核启动流程：
 
@@ -534,8 +534,25 @@ start_kernel
 
    b. 在内存保留区（memory reserve map，对应FDT设备树源文件的字段“/memreserve/”）添加全局变量spin_table_cpu_release_addr的地址。
 
-3. 
+3. 引导处理器在内核函数smp_cpu_setup中，首先调用函数cpu_read_enable_method以获取从处理器的启动方法，然后调用函数smp_spin_table_cpu_init，从FDT设备树二进制文件中“cpu”节点的属性“cpu-release-addr”得到从处理器的放行地址。
+
+4. 引导处理器执行内核函数smp_spin_table_cpu_prepare，针对每个从处理器，把放行地址设置为函数secondary_holding_pen，然后唤醒从处理器。
+
+5. 从处理器被唤醒，执行secondary_holding_pen，这个函数设置了第二个关卡，当引导处理器把全局变量secondary_holding_pen_release设置为从处理器的编号时，才会放行。
+
+6. 引导处理器完成内核的初始化，启动所有从处理器，针对每个从处理器，调用函数smp_spin_table_cpu_boot，把全局变量secondary_holding_pen_release设置为从处理器的编号。
+
+7. 从处理器发现引导处理器把全局变量secondary_holding_pen_release设置为自己的编号，通过第二个关卡，执行函数secondary_startup。
+
+8. 从处理器执行函数__secondary_switched，把向量基准地址寄存器（VBAR_EL1）设置为异常向量表的起始地址，设置栈指针寄存器，调用C程序的入口函数secondary_start_kernel。
+
+9. 从处理器最终在idle线程中执行wfi睡眠，主处理器继续往下进行内核初始化，直到启动init进程，后面多个处理器都被启动起来，都可以调度进程，多进程还会被均衡到多核。
+
+
 
 参考资料
 
 [Booting AArch64 Linux — The Linux Kernel documentation (01.org)](https://01.org/linuxgraphics/gfx-docs/drm/arm64/booting.html)
+
+Linux内核深度解析 作者:*余华兵* 出版社:人民邮电出版社 1.3.3 SMP系统的引导
+

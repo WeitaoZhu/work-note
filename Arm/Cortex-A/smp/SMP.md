@@ -14,9 +14,9 @@
 >
 > 代码阅读工具：vim+ctags+cscope
 
- 		对称多处理器（Symmetric Multi-Processor, SMP）系统包含多个处理器，如4核Cortex-A53，并且每个处理器的地位平等。在启动过程中，处理器的地位不是平等的。core0即0号处理器为引导处理器，负责执行引导程序和初始化内核；其他处理器称为从处理器，等待引导处理器完成初始化。引导处理器完成初始化内核后，启动从处理器。
 
 
+​		对称多处理器（Symmetric Multi-Processor, SMP）系统包含多个处理器，如4核Cortex-A53，并且每个处理器的地位平等。在启动过程中，处理器的地位不是平等的。core0即0号处理器为引导处理器，负责执行引导程序和初始化内核；其他core处理器称为从处理器，等待引导处理器完成初始化。引导处理器完成初始化内核后，启动从处理器。
 
 ​		引导处理器启动从处理器的方法有3种。
 
@@ -556,3 +556,6 @@ start_kernel
 
 Linux内核深度解析 作者:*余华兵* 出版社:人民邮电出版社 1.3.3 SMP系统的引导
 
+[Symmetric Multiprocessing (SMP) • Zynq UltraScale+ MPSoC Software Developer Guide (UG1137) (xilinx.com)](https://docs.xilinx.com/r/2021.1-English/ug1137-zynq-ultrascale-mpsoc-swdev/Symmetric-Multiprocessing-SMP)
+
+[ARM64 SMP多核启动（上）-　spin-table - 腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1857514)

@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include "openssl/ec.h"
 #include "openssl/evp.h"
+#include <openssl/ecdsa.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
 #include <openssl/asn1.h>
@@ -27,6 +28,91 @@
 	0:   main function executes successfully
 	-1:  an error occurs
 **************************************************/
+
+int generate_sm2_key_files(const char *pub_keyfile, const char *pri_keyfile,
+                           const unsigned char *passwd, int passwd_len)
+{
+    int ret = 0;
+    EC_KEY *ec_key = NULL;
+    EC_GROUP *ec_group = NULL;
+    BIO *pri_bio = NULL;
+    BIO *pub_bio = NULL;
+
+    ec_key = EC_KEY_new();
+    if (ec_key == NULL) {
+        ret = -1;
+        printf("EC_KEY_new() failed return NULL.\n");
+        goto finish;
+    }
+    ec_group = EC_GROUP_new_by_curve_name(NID_sm2);
+    if (ec_group == NULL) {
+        ret = -1;
+        printf("EC_GROUP_new_by_curve_name() failed, return NULL.\n");
+        goto finish;
+    }
+    ret = EC_KEY_set_group(ec_key, ec_group);
+    if (ret != 1) {
+        printf("EC_KEY_set_group() failed, ret = %d\n", ret);
+        ret = -1;
+        goto finish;
+    }
+    ret = EC_KEY_generate_key(ec_key);
+    if (!ret) {
+        printf("EC_KEY_generate_key() failed, ret = %d\n", ret);
+        ret = -1;
+        goto finish;
+    }
+    printf("Create sm2 private key ok!\r\n");
+    pri_bio = BIO_new(BIO_s_file());
+    if (pri_bio == NULL) {
+        ret = -1;
+        printf("pri_bio = BIO_new(BIO_s_file()) failed, return NULL. \n");
+        goto finish;
+    }
+    ret = BIO_write_filename(pri_bio, (void *)pri_keyfile);
+    if (ret <= 0) {
+        printf("BIO_write_filename error!\n");
+        goto finish;
+    }
+    ret = PEM_write_bio_ECPrivateKey(pri_bio, ec_key, NULL, (unsigned char *)passwd, passwd_len, NULL, NULL);
+    if (ret != 1) {
+        printf("PEM_write_bio_ECPrivateKey error! ret = %d \n", ret);
+        ret = -1;
+        goto finish;
+    }
+
+    pub_bio = BIO_new(BIO_s_file());
+
+    if (pub_bio == NULL) {
+        ret = -1;
+        printf("pub_bio = BIO_new(BIO_s_file()) failed, return NULL. \n");
+        goto finish;
+    }
+    ret = BIO_write_filename(pub_bio, (void *)pub_keyfile);
+    if (ret <= 0) {
+        printf("BIO_write_filename error!\n");
+        goto finish;
+    }
+    ret = PEM_write_bio_EC_PUBKEY(pub_bio, ec_key);
+    if (ret != 1) {
+        ret = -1;
+        printf("PEM_write_bio_EC_PUBKEY error!\n");
+        goto finish;
+    }
+    printf("Create sm2 public key ok!\r\n");
+    finish:
+    if (ec_key != NULL)
+        EC_KEY_free(ec_key);
+    if (ec_group != NULL)
+        EC_GROUP_free(ec_group);
+    if (pub_bio != NULL)
+        BIO_free_all(pub_bio);
+    if (pri_bio != NULL)
+        BIO_free_all(pri_bio);
+    return ret;
+}
+
+
 int main(void)
 {
 	int ret = -1, i, file = -1;
@@ -34,6 +120,7 @@ int main(void)
 	EVP_PKEY_CTX *ectx = NULL;
 	EVP_PKEY *pkey = NULL;
     BIO *bp = NULL;
+	unsigned char password[] = {"1234567812345678"};
 	unsigned char message[16] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
 				  0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF };
 	size_t message_len = sizeof(message);
@@ -250,10 +337,13 @@ int main(void)
 	}
 	else
 	{
-		printf("Encrypt and decrypt data succeeded!\n");
+		printf("Encrypt and decrypt data succeeded!\r\n");
 	}
  
 	ret = 0;
+
+    generate_sm2_key_files("sm2_pubkey.pem","sm2_prikey.pem",password,sizeof(password));
+
 clean_up:
 	if (pkey)
 	{
@@ -295,9 +385,5 @@ clean_up:
 	{
 		free(plaintext);
 	}
- 
-#if defined(_WIN32) || defined(_WIN64)
-	system("pause");
-#endif
 	return ret;
 }
